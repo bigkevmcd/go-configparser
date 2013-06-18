@@ -122,8 +122,8 @@ func parseFile(file *os.File) (*ConfigParser, error) {
 	return p, nil
 }
 
-func Parse(fileName string) (*ConfigParser, error) {
-	file, err := os.Open(fileName)
+func Parse(filename string) (*ConfigParser, error) {
+	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
 	}
@@ -132,4 +132,49 @@ func Parse(fileName string) (*ConfigParser, error) {
 		return nil, err
 	}
 	return p, nil
+}
+
+func writeSection(file *os.File, name, delimiter string, options Dict) error {
+	_, err := file.WriteString(fmt.Sprintf("[%s]\n", name))
+	if err != nil {
+		return err
+	}
+	for k, v := range options {
+		_, err = file.WriteString(fmt.Sprintf("%s %s %s\n", k, delimiter, v))
+		if err != nil {
+			return err
+		}
+	}
+	_, err = file.WriteString("\n")
+	return err
+}
+
+// Save the current state of the ConfigParser to the named file with the specified delimiter
+func (p *ConfigParser) SaveWithDelimiter(filename, delimiter string) error {
+	f, err := os.Create(filename)
+	defer f.Close()
+	if err != nil {
+		return err
+	}
+
+	d := p.Defaults()
+	if len(d) > 0 {
+		err = writeSection(f, "defaults", delimiter, d)
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, s := range p.Sections() {
+		d, err = p.Items(s)
+		if err != nil {
+			return err
+		}
+		err = writeSection(f, s, delimiter, d)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

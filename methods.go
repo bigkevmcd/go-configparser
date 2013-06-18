@@ -96,10 +96,10 @@ func (p *ConfigParser) Get(section, option string) (string, error) {
 	return "", getNoOptionError(section, option)
 }
 
-// return a copy of the section Dict
+// return a copy of the section Dict including any values from the Defaults
 // NOTE: This is different from the Python version which returns a list of
 // tuples
-func (p *ConfigParser) Items(section string) (Dict, error) {
+func (p *ConfigParser) ItemsWithDefaults(section string) (Dict, error) {
 	if !p.HasSection(section) {
 		return nil, getNoSectionError(section)
 	}
@@ -108,6 +108,20 @@ func (p *ConfigParser) Items(section string) (Dict, error) {
 	for k, v := range p.defaults {
 		s[k] = v
 	}
+	for k, v := range p.config[section] {
+		s[k] = v
+	}
+	return s, nil
+}
+
+// return a copy of the section Dict not including the Defaults
+// NOTE: This is different from the Python version which returns a list of
+// tuples
+func (p *ConfigParser) Items(section string) (Dict, error) {
+	if !p.HasSection(section) {
+		return nil, getNoSectionError(section)
+	}
+	s := make(Dict)
 	for k, v := range p.config[section] {
 		s[k] = v
 	}

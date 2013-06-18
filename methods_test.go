@@ -171,6 +171,16 @@ func (s *ConfigParserSuite) TestItemsWithSection(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(result, DeepEquals, configparser.Dict{
 		"max_build_time":  "200",
+		"builder_command": "%(bin_dir)s/build",
+		"log_dir":         "%(base_dir)s/logs"})
+}
+
+// Items(section) should return a copy of the dict for the section
+func (s *ConfigParserSuite) TestItemsWithDefaults(c *C) {
+	result, err := s.p.ItemsWithDefaults("slave")
+	c.Assert(err, IsNil)
+	c.Assert(result, DeepEquals, configparser.Dict{
+		"max_build_time":  "200",
 		"base_dir":        "/srv",
 		"builder_command": "%(bin_dir)s/build",
 		"log_dir":         "%(base_dir)s/logs",

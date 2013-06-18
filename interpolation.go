@@ -60,8 +60,8 @@ func (p *ConfigParser) interpolate(value string, options *chainmap.ChainMap) str
 }
 
 // return a copy of the dict for the section
-func (p *ConfigParser) ItemsInterpolated(section string) (Dict, error) {
-	s, err := p.Items(section)
+func (p *ConfigParser) ItemsWithDefaultsInterpolated(section string) (Dict, error) {
+	s, err := p.ItemsWithDefaults(section)
 	if err != nil {
 		return nil, err
 	}

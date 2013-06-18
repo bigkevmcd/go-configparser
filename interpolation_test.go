@@ -34,8 +34,8 @@ func (s *ConfigParserSuite) TestGetInterpolatedWithVars(c *C) {
 
 // ItemsInterpolated(section) should return a copy of the section Dict
 // but with the values interpolated
-func (s *ConfigParserSuite) TestItemsInterpolated(c *C) {
-	result, err := s.p.ItemsInterpolated("slave")
+func (s *ConfigParserSuite) TestItemsWithDefaultsInterpolated(c *C) {
+	result, err := s.p.ItemsWithDefaultsInterpolated("slave")
 
 	c.Assert(err, IsNil)
 	c.Assert(result, DeepEquals, configparser.Dict{
