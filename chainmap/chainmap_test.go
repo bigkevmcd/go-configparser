@@ -1,7 +1,7 @@
 package chainmap_test
 
 import (
-	"launchpad.net/progeny/utils/chainmap"
+	"github.com/bigkevmcd/go-configparser/chainmap"
 	"testing"
 
 	. "launchpad.net/gocheck"

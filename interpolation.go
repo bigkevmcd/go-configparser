@@ -1,7 +1,7 @@
 package configparser
 
 import (
-	"github.com/bigkevmcd/configparser/chainmap"
+	"github.com/bigkevmcd/go-configparser/chainmap"
 
 	"strings"
 )

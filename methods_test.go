@@ -1,7 +1,7 @@
 package configparser_test
 
 import (
-	"github.com/bigkevmcd/configparser"
+	"github.com/bigkevmcd/go-configparser"
 
 	. "launchpad.net/gocheck"
 )
