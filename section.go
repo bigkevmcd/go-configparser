@@ -32,11 +32,7 @@ func (s *Section) Options() []string {
 }
 
 func (s *Section) Items() Dict {
-	items := make(Dict)
-	for _, option := range s.Options() {
-		items[option] = s.options[option]
-	}
-	return items
+	return s.options
 }
 
 func (s *Section) safeValue(in string) string {
