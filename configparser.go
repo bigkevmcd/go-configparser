@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 	"unicode"
 )
@@ -38,6 +39,18 @@ type Config map[string]Dict
 type ConfigParser struct {
 	config   Config
 	defaults Dict
+}
+
+// Keys returns a sorted slice of keys
+func (d Dict) Keys() []string {
+	var keys []string
+
+	for key := range d {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	return keys
 }
 
 func getNoSectionError(section string) error {
@@ -139,8 +152,9 @@ func writeSection(file *os.File, name, delimiter string, options Dict) error {
 	if err != nil {
 		return err
 	}
-	for k, v := range options {
-		_, err = file.WriteString(fmt.Sprintf("%s %s %s\n", k, delimiter, v))
+
+	for _, key := range options.Keys() {
+		_, err = file.WriteString(fmt.Sprintf("%s %s %s\n", key, delimiter, options[key]))
 		if err != nil {
 			return err
 		}
