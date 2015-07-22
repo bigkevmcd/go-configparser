@@ -41,6 +41,7 @@ func (s *ConfigParserSuite) TestItemsWithDefaultsInterpolated(c *C) {
 	c.Assert(result, DeepEquals, configparser.Dict{
 		"builder_command": "/srv/bin/build",
 		"bin_dir":         "/srv/bin",
+		"FrobTimeout":     "5",
 		"max_build_time":  "200",
 		"log_dir":         "/srv/logs",
 		"base_dir":        "/srv"})
