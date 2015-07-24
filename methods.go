@@ -192,3 +192,15 @@ func (p *ConfigParser) HasOption(section, option string) (bool, error) {
 	_, err := s.Get(option)
 	return err == nil, nil
 }
+
+func (p *ConfigParser) RemoveOption(section, option string) error {
+	var s *Section
+	if p.isDefaultSection(section) {
+		s = p.defaults
+	} else if _, present := p.config[section]; !present {
+		return getNoSectionError(section)
+	} else {
+		s = p.config[section]
+	}
+	return s.Remove(option)
+}

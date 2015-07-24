@@ -3,7 +3,7 @@ package configparser_test
 import (
 	"github.com/bigkevmcd/go-configparser"
 
-	. "launchpad.net/gocheck"
+	. "gopkg.in/check.v1"
 )
 
 // GetInterpolated(section, option) should return an appropriate error if the section does not exist
