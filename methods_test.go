@@ -68,7 +68,7 @@ func (s *ConfigParserSuite) TestOptionsWithNoSection(c *C) {
 func (s *ConfigParserSuite) TestOptionsWithSection(c *C) {
 	result, err := s.p.Options("slave")
 	c.Assert(err, IsNil)
-	c.Assert(result, DeepEquals, []string{"base_dir", "bin_dir", "builder_command", "log_dir", "max_build_time"})
+	c.Assert(result, DeepEquals, []string{"FrobTimeout", "base_dir", "bin_dir", "builder_command", "log_dir", "max_build_time"})
 }
 
 // Options(section) should return an empty slice if there are no options in a section
@@ -97,6 +97,14 @@ func (s *ConfigParserSuite) TestGet(c *C) {
 	result, err := s.p.Get("slave", "max_build_time")
 	c.Assert(err, IsNil)
 	c.Assert(result, Equals, "200")
+}
+
+// Get(section, option) should return the option value for the named section
+// regardless of case
+func (s *ConfigParserSuite) TestGetCamelCase(c *C) {
+	result, err := s.p.Get("slave", "FrobTimeout")
+	c.Assert(err, IsNil)
+	c.Assert(result, Equals, "5")
 }
 
 // Get(section, option) should lookup the option in the DEFAULT section if requested
@@ -170,6 +178,7 @@ func (s *ConfigParserSuite) TestItemsWithSection(c *C) {
 	result, err := s.p.Items("slave")
 	c.Assert(err, IsNil)
 	c.Assert(result, DeepEquals, configparser.Dict{
+		"FrobTimeout":     "5",
 		"max_build_time":  "200",
 		"builder_command": "%(bin_dir)s/build",
 		"log_dir":         "%(base_dir)s/logs"})
@@ -180,6 +189,7 @@ func (s *ConfigParserSuite) TestItemsWithDefaults(c *C) {
 	result, err := s.p.ItemsWithDefaults("slave")
 	c.Assert(err, IsNil)
 	c.Assert(result, DeepEquals, configparser.Dict{
+		"FrobTimeout":     "5",
 		"max_build_time":  "200",
 		"base_dir":        "/srv",
 		"builder_command": "%(bin_dir)s/build",

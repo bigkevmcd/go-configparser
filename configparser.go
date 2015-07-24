@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 	"unicode"
 )
@@ -33,11 +34,23 @@ var boolMapping = map[string]bool{
 }
 
 type Dict map[string]string
-type Config map[string]Dict
+type Config map[string]*Section
 
 type ConfigParser struct {
 	config   Config
-	defaults Dict
+	defaults *Section
+}
+
+// Keys returns a sorted slice of keys
+func (d Dict) Keys() []string {
+	var keys []string
+
+	for key := range d {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	return keys
 }
 
 func getNoSectionError(section string) error {
@@ -51,17 +64,17 @@ func getNoOptionError(section, option string) error {
 func New() *ConfigParser {
 	return &ConfigParser{
 		config:   make(Config),
-		defaults: make(Dict),
+		defaults: newSection("defaults"),
 	}
 }
 
 func NewWithDefaults(defaults Dict) *ConfigParser {
 	p := ConfigParser{
 		config:   make(Config),
-		defaults: make(Dict),
+		defaults: newSection("defaults"),
 	}
 	for key, value := range defaults {
-		p.defaults[key] = value
+		p.defaults.Add(key, value)
 	}
 	return &p
 }
@@ -82,7 +95,7 @@ func parseFile(file *os.File) (*ConfigParser, error) {
 	reader := bufio.NewReader(file)
 	var lineNo int
 	var err error
-	var curSect Dict
+	var curSect *Section
 
 	for err == nil {
 		l, _, err := reader.ReadLine()
@@ -105,17 +118,14 @@ func parseFile(file *os.File) (*ConfigParser, error) {
 			if section == defaultSectionName {
 				curSect = p.defaults
 			} else if _, present := p.config[section]; !present {
-				curSect = make(Dict)
+				curSect = newSection(section)
 				p.config[section] = curSect
 			}
 		} else if match = keyValue.FindStringSubmatch(line); len(match) > 0 {
 			if curSect == nil {
 				return nil, fmt.Errorf("Missing Section Header: %d %s", lineNo, line)
 			} else {
-				option := match[1]
-				// separator := match[2]
-				value := p.transformOption(strings.TrimFunc(match[3], unicode.IsSpace))
-				curSect[option] = value
+				curSect.Add(match[1], match[3])
 			}
 		}
 	}
@@ -134,13 +144,14 @@ func Parse(filename string) (*ConfigParser, error) {
 	return p, nil
 }
 
-func writeSection(file *os.File, name, delimiter string, options Dict) error {
-	_, err := file.WriteString(fmt.Sprintf("[%s]\n", name))
+func writeSection(file *os.File, delimiter string, section *Section) error {
+	_, err := file.WriteString(fmt.Sprintf("[%s]\n", section.Name))
 	if err != nil {
 		return err
 	}
-	for k, v := range options {
-		_, err = file.WriteString(fmt.Sprintf("%s %s %s\n", k, delimiter, v))
+
+	for _, option := range section.Options() {
+		_, err = file.WriteString(fmt.Sprintf("%s %s %s\n", option, delimiter, section.options[option]))
 		if err != nil {
 			return err
 		}
@@ -157,20 +168,15 @@ func (p *ConfigParser) SaveWithDelimiter(filename, delimiter string) error {
 		return err
 	}
 
-	d := p.Defaults()
-	if len(d) > 0 {
-		err = writeSection(f, "defaults", delimiter, d)
+	if len(p.defaults.Options()) > 0 {
+		err = writeSection(f, delimiter, p.defaults)
 		if err != nil {
 			return err
 		}
 	}
 
 	for _, s := range p.Sections() {
-		d, err = p.Items(s)
-		if err != nil {
-			return err
-		}
-		err = writeSection(f, s, delimiter, d)
+		err = writeSection(f, delimiter, p.config[s])
 		if err != nil {
 			return err
 		}
