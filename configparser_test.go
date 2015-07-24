@@ -2,7 +2,7 @@ package configparser_test
 
 import (
 	"github.com/bigkevmcd/go-configparser"
-	. "launchpad.net/gocheck"
+	. "gopkg.in/check.v1"
 
 	"fmt"
 	"io/ioutil"

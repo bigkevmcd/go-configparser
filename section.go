@@ -44,6 +44,19 @@ func (s *Section) safeKey(in string) string {
 	return strings.ToLower(strings.TrimSpace(in))
 }
 
+func (s *Section) Remove(key string) error {
+	_, present := s.options[key]
+	if !present {
+		return getNoOptionError(s.Name, key)
+	}
+
+	// delete doesn't return anything, but this does require
+	// that the passed key to be removed matches the options key.
+	delete(s.lookup, s.safeKey(key))
+	delete(s.options, key)
+	return nil
+}
+
 func newSection(name string) *Section {
 	return &Section{
 		Name:    name,

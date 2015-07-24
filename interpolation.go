@@ -16,7 +16,7 @@ func (p *ConfigParser) getInterpolated(section, option string, c *chainmap.Chain
 
 // return a string value for the named option.  All % interpolations are
 // expanded in the return values, based on the defaults passed into the
-// constructor and the DEFAULT section.  
+// constructor and the DEFAULT section.
 func (p *ConfigParser) GetInterpolated(section, option string) (string, error) {
 	o, err := p.Items(section)
 	if err != nil {
