@@ -42,6 +42,7 @@ func (s *ConfigParserSuite) TestItemsWithDefaultsInterpolated(c *C) {
 		"builder_command": "/srv/bin/build",
 		"bin_dir":         "/srv/bin",
 		"FrobTimeout":     "5",
+		"TableName":       "MyCaseSensitiveTableName",
 		"max_build_time":  "200",
 		"log_dir":         "/srv/logs",
 		"base_dir":        "/srv"})

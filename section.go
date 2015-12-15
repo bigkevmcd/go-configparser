@@ -36,8 +36,7 @@ func (s *Section) Items() Dict {
 }
 
 func (s *Section) safeValue(in string) string {
-	// Same as safeKey for now.
-	return s.safeKey(in)
+	return strings.TrimSpace(in)
 }
 
 func (s *Section) safeKey(in string) string {

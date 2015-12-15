@@ -68,7 +68,7 @@ func (s *ConfigParserSuite) TestOptionsWithNoSection(c *gc.C) {
 func (s *ConfigParserSuite) TestOptionsWithSection(c *gc.C) {
 	result, err := s.p.Options("slave")
 	c.Assert(err, gc.IsNil)
-	c.Assert(result, gc.DeepEquals, []string{"FrobTimeout", "base_dir", "bin_dir", "builder_command", "log_dir", "max_build_time"})
+	c.Assert(result, gc.DeepEquals, []string{"FrobTimeout", "TableName", "base_dir", "bin_dir", "builder_command", "log_dir", "max_build_time"})
 }
 
 // Options(section) should return an empty slice if there are no options in a section
@@ -105,6 +105,14 @@ func (s *ConfigParserSuite) TestGetCamelCase(c *gc.C) {
 	result, err := s.p.Get("slave", "FrobTimeout")
 	c.Assert(err, gc.IsNil)
 	c.Assert(result, gc.Equals, "5")
+}
+
+// Get(section, option) should return the option value for the named section
+// without mangling the value's case
+func (s *ConfigParserSuite) TestValueCasePreservation(c *gc.C) {
+	result, err := s.p.Get("slave", "TableName")
+	c.Assert(err, gc.IsNil)
+	c.Assert(result, gc.Equals, "MyCaseSensitiveTableName")
 }
 
 // Get(section, option) should lookup the option in the DEFAULT section if requested
@@ -179,6 +187,7 @@ func (s *ConfigParserSuite) TestItemsWithSection(c *gc.C) {
 	c.Assert(err, gc.IsNil)
 	c.Assert(result, gc.DeepEquals, configparser.Dict{
 		"FrobTimeout":     "5",
+		"TableName":       "MyCaseSensitiveTableName",
 		"max_build_time":  "200",
 		"builder_command": "%(bin_dir)s/build",
 		"log_dir":         "%(base_dir)s/logs"})
@@ -190,6 +199,7 @@ func (s *ConfigParserSuite) TestItemsWithDefaults(c *gc.C) {
 	c.Assert(err, gc.IsNil)
 	c.Assert(result, gc.DeepEquals, configparser.Dict{
 		"FrobTimeout":     "5",
+		"TableName":       "MyCaseSensitiveTableName",
 		"max_build_time":  "200",
 		"base_dir":        "/srv",
 		"builder_command": "%(bin_dir)s/build",
