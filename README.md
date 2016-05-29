@@ -7,12 +7,13 @@ This can parse Python-compatible ConfigParser config files, including support fo
 ```Go
   import (
     "github.com/bigkevmcd/configparser"
+  )
 ```
 
 ## Parsing configuration files
 It's easy to parse a configuration file.
 ```Go
-  p, err = configparser.NewConfigParserFromFile("example.cfg")
+  p, err := configparser.NewConfigParserFromFile("example.cfg")
   if err != nil {
     ...
   }
