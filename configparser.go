@@ -125,7 +125,7 @@ func parseFile(file *os.File) (*ConfigParser, error) {
 			if curSect == nil {
 				return nil, fmt.Errorf("Missing Section Header: %d %s", lineNo, line)
 			} else {
-				curSect.Add(match[1], match[3])
+				curSect.Add(strings.TrimSpace(match[1]), match[3])
 			}
 		}
 	}
