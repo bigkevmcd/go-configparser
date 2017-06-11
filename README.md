@@ -6,7 +6,7 @@ This can parse Python-compatible ConfigParser config files, including support fo
 ## Setup
 ```Go
   import (
-    "github.com/bigkevmcd/configparser"
+    "github.com/bigkevmcd/go-configparser"
   )
 ```
 
