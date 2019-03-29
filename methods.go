@@ -11,24 +11,26 @@ func (p *ConfigParser) isDefaultSection(section string) bool {
 	return strings.ToLower(section) == strings.ToLower(defaultSectionName)
 }
 
+// Defaults returns the items in the map used for default values.
 func (p *ConfigParser) Defaults() Dict {
 	return p.defaults.Items()
 }
 
-// Return a list of section names, excluding [DEFAULT].
+// Sections returns a list of section names, excluding [DEFAULT].
 func (p *ConfigParser) Sections() []string {
 	sections := make([]string, 0)
-	for section, _ := range p.config {
+	for section := range p.config {
 		sections = append(sections, section)
 	}
 	sort.Strings(sections)
 	return sections
 }
 
-// Create a new section in the configuration.
+// AddSection creates a new section in the configuration.
+//
 // Returns an error if a section by the specified name
 // already exists.
-// Returns an error if the specified nanme DEFAULT or any of it's
+// Returns an error if the specified name DEFAULT or any of its
 // case-insensitive variants.
 // Returns nil if no error and the section is created
 func (p *ConfigParser) AddSection(section string) error {
@@ -41,14 +43,17 @@ func (p *ConfigParser) AddSection(section string) error {
 	return nil
 }
 
-// Indicate whether the named section is present in the configuration.
+// HasSection returns true if the named section is present in the
+// configuration.
+//
 // The DEFAULT section is not acknowledged.
 func (p *ConfigParser) HasSection(section string) bool {
 	_, present := p.config[section]
 	return present
 }
 
-// Return a list of option names for the given section name.
+// Options returns a list of option mames for the given section name.
+//
 // Returns an error if the section does not exist.
 func (p *ConfigParser) Options(section string) ([]string, error) {
 	if !p.HasSection(section) {
@@ -62,14 +67,15 @@ func (p *ConfigParser) Options(section string) ([]string, error) {
 		seenOptions[option] = true
 	}
 	options := make([]string, 0)
-	for option, _ := range seenOptions {
+	for option := range seenOptions {
 		options = append(options, option)
 	}
 	sort.Strings(options)
 	return options, nil
 }
 
-// return a string value for the named option.
+// Get returns string value for the named option.
+//
 // Returns an error if a section does not exist
 // Returns an error if the option does not exist either in the section or in
 // the defaults
@@ -91,7 +97,9 @@ func (p *ConfigParser) Get(section, option string) (string, error) {
 	return "", getNoOptionError(section, option)
 }
 
-// return a copy of the section Dict including any values from the Defaults
+// ItemsWithDefaults returns a copy of the named section Dict including
+// any values from the Defaults.
+//
 // NOTE: This is different from the Python version which returns a list of
 // tuples
 func (p *ConfigParser) ItemsWithDefaults(section string) (Dict, error) {
@@ -109,7 +117,8 @@ func (p *ConfigParser) ItemsWithDefaults(section string) (Dict, error) {
 	return s, nil
 }
 
-// return a copy of the section Dict not including the Defaults
+// Items returns a copy of the section Dict not including the Defaults.
+//
 // NOTE: This is different from the Python version which returns a list of
 // tuples
 func (p *ConfigParser) Items(section string) (Dict, error) {
@@ -119,8 +128,9 @@ func (p *ConfigParser) Items(section string) (Dict, error) {
 	return p.config[section].Items(), nil
 }
 
-// set the given option
-// returns an error if the section does not exist
+// Set puts the given option into the named section.
+//
+// Returns an error if the section does not exist.
 func (p *ConfigParser) Set(section, option, value string) error {
 	var setSection *Section
 
