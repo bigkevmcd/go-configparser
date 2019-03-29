@@ -33,9 +33,14 @@ var boolMapping = map[string]bool{
 	"no":    false,
 }
 
+// Dict is a simple string->string map.
 type Dict map[string]string
+
+// Config represents a Python style configuration file.
 type Config map[string]*Section
 
+// ConfigParser ties together a Config and default values for use in
+// interpolated configuration values.
 type ConfigParser struct {
 	config   Config
 	defaults *Section
@@ -61,6 +66,7 @@ func getNoOptionError(section, option string) error {
 	return fmt.Errorf("No option '%s' in section: '%s'", option, section)
 }
 
+// New creates a new ConfigParser.
 func New() *ConfigParser {
 	return &ConfigParser{
 		config:   make(Config),
@@ -68,6 +74,8 @@ func New() *ConfigParser {
 	}
 }
 
+// NewWithDefaults allows creation of a new ConfigParser with a pre-existing
+// Dict.
 func NewWithDefaults(defaults Dict) *ConfigParser {
 	p := ConfigParser{
 		config:   make(Config),
@@ -79,7 +87,8 @@ func NewWithDefaults(defaults Dict) *ConfigParser {
 	return &p
 }
 
-// Create a new ConfigParser struct populated from the supplied filename
+// NewConfigParserFromFile creates a new ConfigParser struct populated from the
+// supplied filename.
 func NewConfigParserFromFile(filename string) (*ConfigParser, error) {
 	p, err := Parse(filename)
 	if err != nil {
@@ -124,14 +133,14 @@ func parseFile(file *os.File) (*ConfigParser, error) {
 		} else if match = keyValue.FindStringSubmatch(line); len(match) > 0 {
 			if curSect == nil {
 				return nil, fmt.Errorf("Missing Section Header: %d %s", lineNo, line)
-			} else {
-				curSect.Add(match[1], match[3])
 			}
+			curSect.Add(strings.TrimSpace(match[1]), match[3])
 		}
 	}
 	return p, nil
 }
 
+// Parse takes a filename and parses it into a ConfigParser value.
 func Parse(filename string) (*ConfigParser, error) {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -160,7 +169,8 @@ func writeSection(file *os.File, delimiter string, section *Section) error {
 	return err
 }
 
-// Save the current state of the ConfigParser to the named file with the specified delimiter
+// SaveWithDelimiter writes the current state of the ConfigParser to the named
+// file with the specified delimiter.
 func (p *ConfigParser) SaveWithDelimiter(filename, delimiter string) error {
 	f, err := os.Create(filename)
 	defer f.Close()

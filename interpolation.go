@@ -14,9 +14,10 @@ func (p *ConfigParser) getInterpolated(section, option string, c *chainmap.Chain
 	return p.interpolate(val, c), nil
 }
 
-// return a string value for the named option.  All % interpolations are
-// expanded in the return values, based on the defaults passed into the
-// constructor and the DEFAULT section.
+// GetInterpolated returns a string value for the named option.
+//
+// All % interpolations are expanded in the return values, based on
+// the defaults passed into the constructor and the DEFAULT section.
 func (p *ConfigParser) GetInterpolated(section, option string) (string, error) {
 	o, err := p.Items(section)
 	if err != nil {
@@ -26,9 +27,10 @@ func (p *ConfigParser) GetInterpolated(section, option string) (string, error) {
 	return p.getInterpolated(section, option, c)
 }
 
-// return a string value for the named option.  All % interpolations are
-// expanded in the return values, based on the defaults passed into the
-// constructor and the DEFAULT section.  Additional substitutions may be
+// GetInterpolatedWithVars returns a string value for the named option.
+//
+// All % interpolations are expanded in the return values, based on the defaults passed
+// into the constructor and the DEFAULT section.  Additional substitutions may be
 // provided using the 'v' argument, which must be a Dict whose contents contents
 // override any pre-existing defaults.
 func (p *ConfigParser) GetInterpolatedWithVars(section, option string, v Dict) (string, error) {
@@ -43,7 +45,7 @@ func (p *ConfigParser) GetInterpolatedWithVars(section, option string, v Dict) (
 
 // Private method which does the work of interpolating a value
 // interpolates the value using the values in the ChainMap
-// returns the interpolated string
+// returns the interpolated string.
 func (p *ConfigParser) interpolate(value string, options *chainmap.ChainMap) string {
 
 	for i := 0; i < maxInterpolationDepth; i++ {
@@ -59,7 +61,7 @@ func (p *ConfigParser) interpolate(value string, options *chainmap.ChainMap) str
 	return value
 }
 
-// return a copy of the dict for the section
+// ItemsWithDefaultsInterpolated returns a copy of the dict for the section.
 func (p *ConfigParser) ItemsWithDefaultsInterpolated(section string) (Dict, error) {
 	s, err := p.ItemsWithDefaults(section)
 	if err != nil {

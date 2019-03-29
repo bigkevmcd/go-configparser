@@ -14,7 +14,7 @@ func (s *ConfigParserSuite) TestGetInterpolatedWithMissingSection(c *C) {
 
 // GetInterpolated(section, option) should interpolate the result
 func (s *ConfigParserSuite) TestGetInterpolated(c *C) {
-	result, err := s.p.GetInterpolated("slave", "builder_command")
+	result, err := s.p.GetInterpolated("follower", "builder_command")
 
 	c.Assert(err, IsNil)
 	c.Assert(result, Equals, "/srv/bin/build")
@@ -26,7 +26,7 @@ func (s *ConfigParserSuite) TestGetInterpolatedWithVars(c *C) {
 	d := make(configparser.Dict)
 	d["bin_dir"] = "/a/non/existent/path"
 
-	result, err := s.p.GetInterpolatedWithVars("slave", "builder_command", d)
+	result, err := s.p.GetInterpolatedWithVars("follower", "builder_command", d)
 
 	c.Assert(err, IsNil)
 	c.Assert(result, Equals, "/a/non/existent/path/build")
@@ -35,7 +35,7 @@ func (s *ConfigParserSuite) TestGetInterpolatedWithVars(c *C) {
 // ItemsInterpolated(section) should return a copy of the section Dict
 // but with the values interpolated
 func (s *ConfigParserSuite) TestItemsWithDefaultsInterpolated(c *C) {
-	result, err := s.p.ItemsWithDefaultsInterpolated("slave")
+	result, err := s.p.ItemsWithDefaultsInterpolated("follower")
 
 	c.Assert(err, IsNil)
 	c.Assert(result, DeepEquals, configparser.Dict{

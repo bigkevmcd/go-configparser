@@ -22,7 +22,7 @@ func (s *ConfigParserSuite) TestDefaultsWithNoDefaults(c *gc.C) {
 // Sections() should return a list of section names excluding [DEFAULT]
 func (s *ConfigParserSuite) TestSections(c *gc.C) {
 	result := s.p.Sections()
-	c.Assert(result, gc.DeepEquals, []string{"slave"})
+	c.Assert(result, gc.DeepEquals, []string{"follower", "whitespace"})
 }
 
 // AddSection(section) should create a new section in the configuration
@@ -37,9 +37,9 @@ func (s *ConfigParserSuite) TestAddSection(c *gc.C) {
 
 // AddSection(section) should return an appropriate error if the section already exists
 func (s *ConfigParserSuite) TestAddSectionDuplicate(c *gc.C) {
-	err := s.p.AddSection("slave")
+	err := s.p.AddSection("follower")
 
-	c.Assert(err, gc.ErrorMatches, "Section 'slave' already exists")
+	c.Assert(err, gc.ErrorMatches, "Section 'follower' already exists")
 }
 
 // AddSection(section) should return an appropriate error if we attempt to add a default section
@@ -66,7 +66,7 @@ func (s *ConfigParserSuite) TestOptionsWithNoSection(c *gc.C) {
 
 // Options(section) should return a list of option names for a given section mixed in with the defaults
 func (s *ConfigParserSuite) TestOptionsWithSection(c *gc.C) {
-	result, err := s.p.Options("slave")
+	result, err := s.p.Options("follower")
 	c.Assert(err, gc.IsNil)
 	c.Assert(result, gc.DeepEquals, []string{"FrobTimeout", "TableName", "base_dir", "bin_dir", "builder_command", "log_dir", "max_build_time"})
 }
@@ -88,13 +88,13 @@ func (s *ConfigParserSuite) TestGetWithMissingSection(c *gc.C) {
 
 // Get(section, option) should return an appropriate error if the option does not exist within the section
 func (s *ConfigParserSuite) TestGetWithMissingOptionInSection(c *gc.C) {
-	_, err := s.p.Get("slave", "missing")
-	c.Assert(err, gc.ErrorMatches, "No option 'missing' in section: 'slave'")
+	_, err := s.p.Get("follower", "missing")
+	c.Assert(err, gc.ErrorMatches, "No option 'missing' in section: 'follower'")
 }
 
 // Get(section, option) should return the option value for the named section
 func (s *ConfigParserSuite) TestGet(c *gc.C) {
-	result, err := s.p.Get("slave", "max_build_time")
+	result, err := s.p.Get("follower", "max_build_time")
 	c.Assert(err, gc.IsNil)
 	c.Assert(result, gc.Equals, "200")
 }
@@ -102,7 +102,7 @@ func (s *ConfigParserSuite) TestGet(c *gc.C) {
 // Get(section, option) should return the option value for the named section
 // regardless of case
 func (s *ConfigParserSuite) TestGetCamelCase(c *gc.C) {
-	result, err := s.p.Get("slave", "FrobTimeout")
+	result, err := s.p.Get("follower", "FrobTimeout")
 	c.Assert(err, gc.IsNil)
 	c.Assert(result, gc.Equals, "5")
 }
@@ -110,7 +110,7 @@ func (s *ConfigParserSuite) TestGetCamelCase(c *gc.C) {
 // Get(section, option) should return the option value for the named section
 // without mangling the value's case
 func (s *ConfigParserSuite) TestValueCasePreservation(c *gc.C) {
-	result, err := s.p.Get("slave", "TableName")
+	result, err := s.p.Get("follower", "TableName")
 	c.Assert(err, gc.IsNil)
 	c.Assert(result, gc.Equals, "MyCaseSensitiveTableName")
 }
@@ -131,14 +131,14 @@ func (s *ConfigParserSuite) TestGetDefaultSectionLowercase(c *gc.C) {
 
 // Get(section, option) should lookup the value in the default section if it doesn't exist in the section
 func (s *ConfigParserSuite) TestGetWithMissingOptionInSectionButDefaultProvided(c *gc.C) {
-	result, err := s.p.Get("slave", "base_dir")
+	result, err := s.p.Get("follower", "base_dir")
 	c.Assert(err, gc.IsNil)
 	c.Assert(result, gc.Equals, "/srv")
 }
 
 // Get(section, option) should be case insensitive with respect to options
 func (s *ConfigParserSuite) TestGetCaseInsensitiveWithOptions(c *gc.C) {
-	result, err := s.p.Get("slave", "MAX_BUILD_TIME")
+	result, err := s.p.Get("follower", "MAX_BUILD_TIME")
 	c.Assert(err, gc.IsNil)
 	c.Assert(result, gc.Equals, "200")
 }
@@ -158,8 +158,8 @@ func (s *ConfigParserSuite) TestSetDefaultSection(c *gc.C) {
 
 // Set(section, option, value) should record the specified value in the correct section
 func (s *ConfigParserSuite) TestSet(c *gc.C) {
-	s.p.Set("slave", "my_value", "newvalue")
-	result, err := s.p.Get("slave", "my_value")
+	s.p.Set("follower", "my_value", "newvalue")
+	result, err := s.p.Get("follower", "my_value")
 	c.Assert(err, gc.IsNil)
 	c.Assert(result, gc.Equals, "newvalue")
 }
@@ -172,7 +172,7 @@ func (s *ConfigParserSuite) TestHasSectionWithoutSection(c *gc.C) {
 
 // HasSection(section) should return true if the section does exist in the configuration
 func (s *ConfigParserSuite) TestHasSectionWithSection(c *gc.C) {
-	c.Assert(s.p.HasSection("slave"), gc.Equals, true)
+	c.Assert(s.p.HasSection("follower"), gc.Equals, true)
 }
 
 // Items(section) should return an appropriate error if the section doesn't exist
@@ -183,7 +183,7 @@ func (s *ConfigParserSuite) TestItemsWithNoSection(c *gc.C) {
 
 // Items(section) should return a copy of the dict for the section
 func (s *ConfigParserSuite) TestItemsWithSection(c *gc.C) {
-	result, err := s.p.Items("slave")
+	result, err := s.p.Items("follower")
 	c.Assert(err, gc.IsNil)
 	c.Assert(result, gc.DeepEquals, configparser.Dict{
 		"FrobTimeout":     "5",
@@ -195,7 +195,7 @@ func (s *ConfigParserSuite) TestItemsWithSection(c *gc.C) {
 
 // Items(section) should return a copy of the dict for the section
 func (s *ConfigParserSuite) TestItemsWithDefaults(c *gc.C) {
-	result, err := s.p.ItemsWithDefaults("slave")
+	result, err := s.p.ItemsWithDefaults("follower")
 	c.Assert(err, gc.IsNil)
 	c.Assert(result, gc.DeepEquals, configparser.Dict{
 		"FrobTimeout":     "5",
@@ -323,16 +323,16 @@ func (s *ConfigParserSuite) TestRemoveOptionMissingSection(c *gc.C) {
 
 // RemoveOption(section, option) should return an appropriate error if the option doesn't exist
 func (s *ConfigParserSuite) TestRemoveOptionMissingOption(c *gc.C) {
-	err := s.p.RemoveOption("slave", "unknown")
-	c.Assert(err, gc.ErrorMatches, "No option 'unknown' in section: 'slave'")
+	err := s.p.RemoveOption("follower", "unknown")
+	c.Assert(err, gc.ErrorMatches, "No option 'unknown' in section: 'follower'")
 }
 
 // RemoveOption(section, option) should remove an option from the specified
 // section.
 func (s *ConfigParserSuite) TestRemoveOption(c *gc.C) {
-	err := s.p.RemoveOption("slave", "max_build_time")
+	err := s.p.RemoveOption("follower", "max_build_time")
 	c.Assert(err, gc.IsNil)
-	hasOption, err := s.p.HasOption("slave", "max_build_time")
+	hasOption, err := s.p.HasOption("follower", "max_build_time")
 	c.Assert(err, gc.IsNil)
 	c.Assert(hasOption, gc.Equals, false)
 }
@@ -340,8 +340,8 @@ func (s *ConfigParserSuite) TestRemoveOption(c *gc.C) {
 // RemoveOption(section, option) does not remove options when the option doesn't
 // match the specified option exactly.
 func (s *ConfigParserSuite) TestRemoveOptionMatchesPrecisely(c *gc.C) {
-	err := s.p.RemoveOption("slave", "max_build_TIME")
-	c.Assert(err, gc.ErrorMatches, "No option 'max_build_TIME' in section: 'slave'")
+	err := s.p.RemoveOption("follower", "max_build_TIME")
+	c.Assert(err, gc.ErrorMatches, "No option 'max_build_TIME' in section: 'follower'")
 }
 
 // HasOption(section, option) should return true if section is default and the option is a default
@@ -355,4 +355,11 @@ func (s *ConfigParserSuite) TestHasOptionFromDefaults(c *gc.C) {
 func (s *ConfigParserSuite) TestHasOptionMissingSection(c *gc.C) {
 	_, err := s.p.HasOption("unknown", "missing")
 	c.Assert(err, gc.ErrorMatches, "No section: 'unknown'")
+}
+
+// Options(section) should strip whitespace from the keys when parsing sections.
+func (s *ConfigParserSuite) TestOptionsWithSectionStripsWhitespaceFromKeys(c *gc.C) {
+	result, err := s.p.Options("whitespace")
+	c.Assert(err, gc.IsNil)
+	c.Assert(result, gc.DeepEquals, []string{"base_dir", "bin_dir", "foo"})
 }
