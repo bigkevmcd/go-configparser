@@ -22,7 +22,7 @@ func (s *ConfigParserSuite) TestDefaultsWithNoDefaults(c *gc.C) {
 // Sections() should return a list of section names excluding [DEFAULT]
 func (s *ConfigParserSuite) TestSections(c *gc.C) {
 	result := s.p.Sections()
-	c.Assert(result, gc.DeepEquals, []string{"follower"})
+	c.Assert(result, gc.DeepEquals, []string{"follower", "whitespace"})
 }
 
 // AddSection(section) should create a new section in the configuration
@@ -355,4 +355,11 @@ func (s *ConfigParserSuite) TestHasOptionFromDefaults(c *gc.C) {
 func (s *ConfigParserSuite) TestHasOptionMissingSection(c *gc.C) {
 	_, err := s.p.HasOption("unknown", "missing")
 	c.Assert(err, gc.ErrorMatches, "No section: 'unknown'")
+}
+
+// Options(section) should strip whitespace from the keys when parsing sections.
+func (s *ConfigParserSuite) TestOptionsWithSectionStripsWhitespaceFromKeys(c *gc.C) {
+	result, err := s.p.Options("whitespace")
+	c.Assert(err, gc.IsNil)
+	c.Assert(result, gc.DeepEquals, []string{"base_dir", "bin_dir", "foo"})
 }
