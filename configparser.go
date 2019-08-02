@@ -143,6 +143,7 @@ func parseFile(file *os.File) (*ConfigParser, error) {
 // Parse takes a filename and parses it into a ConfigParser value.
 func Parse(filename string) (*ConfigParser, error) {
 	file, err := os.Open(filename)
+	defer file.Close()
 	if err != nil {
 		return nil, err
 	}
