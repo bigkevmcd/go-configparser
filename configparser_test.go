@@ -94,5 +94,5 @@ func (s *ConfigParserSuite) TestSaveWithDelimiterAndDefaults(c *C) {
 	data, err := ioutil.ReadAll(f)
 	c.Assert(err, IsNil)
 	f.Close()
-	c.Assert(fmt.Sprintf("%s", data), Equals, "[defaults]\ntesting = value\n\n[othersection]\nmyoption = myvalue\nnewoption = novalue\n\n[testing]\nmyoption = value\n\n")
+	c.Assert(fmt.Sprintf("%s", data), Equals, "[default]\ntesting = value\n\n[othersection]\nmyoption = myvalue\nnewoption = novalue\n\n[testing]\nmyoption = value\n\n")
 }
