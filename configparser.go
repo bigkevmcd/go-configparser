@@ -70,7 +70,7 @@ func getNoOptionError(section, option string) error {
 func New() *ConfigParser {
 	return &ConfigParser{
 		config:   make(Config),
-		defaults: newSection("default"),
+		defaults: newSection(defaultSectionName),
 	}
 }
 
@@ -79,7 +79,7 @@ func New() *ConfigParser {
 func NewWithDefaults(defaults Dict) *ConfigParser {
 	p := ConfigParser{
 		config:   make(Config),
-		defaults: newSection("default"),
+		defaults: newSection(defaultSectionName),
 	}
 	for key, value := range defaults {
 		p.defaults.Add(key, value)
