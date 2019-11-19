@@ -42,12 +42,12 @@ func (s *ConfigParserSuite) TestAddSectionDuplicate(c *gc.C) {
 	c.Assert(err, gc.ErrorMatches, "Section 'follower' already exists")
 }
 
-// AddSection(section) should return an appropriate error if we attempt to add a default section
+// AddSection(section) should not error if we attempt to add a default section
 func (s *ConfigParserSuite) TestAddSectionDefaultLowercase(c *gc.C) {
 	newParser := configparser.New()
 	err := newParser.AddSection("default")
 
-	c.Assert(err, gc.ErrorMatches, "Invalid section name: 'default'")
+	c.Assert(err, gc.IsNil)
 }
 
 // AddSection(section) should return an appropriate error if we attempt to add a DEFAULT section
@@ -122,11 +122,10 @@ func (s *ConfigParserSuite) TestGetDefaultSection(c *gc.C) {
 	c.Assert(result, gc.Equals, "%(base_dir)s/bin")
 }
 
-// Get(section, option) should lookup the option in the DEFAULT section if requested
+// Get(section, option) should return an error as the DEFAULT section is case-sensitive
 func (s *ConfigParserSuite) TestGetDefaultSectionLowercase(c *gc.C) {
-	result, err := s.p.Get("default", "bin_dir")
-	c.Assert(err, gc.IsNil)
-	c.Assert(result, gc.Equals, "%(base_dir)s/bin")
+	_, err := s.p.Get("default", "bin_dir")
+	c.Assert(err, gc.ErrorMatches, "No section: 'default'")
 }
 
 // Get(section, option) should lookup the value in the default section if it doesn't exist in the section
