@@ -4,11 +4,10 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
-	"strings"
 )
 
 func (p *ConfigParser) isDefaultSection(section string) bool {
-	return strings.ToLower(section) == strings.ToLower(defaultSectionName)
+	return section == defaultSectionName
 }
 
 // Defaults returns the items in the map used for default values.
