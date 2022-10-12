@@ -10,10 +10,8 @@ func New(dicts ...Dict) *ChainMap {
 	chainMap := &ChainMap{
 		maps: make([]Dict, 0),
 	}
+	chainMap.maps = append(chainMap.maps, dicts...)
 
-	for _, dict := range dicts {
-		chainMap.maps = append(chainMap.maps, dict)
-	}
 	return chainMap
 }
 

@@ -22,6 +22,7 @@ func (p *ConfigParser) Sections() []string {
 		sections = append(sections, section)
 	}
 	sort.Strings(sections)
+
 	return sections
 }
 
@@ -34,11 +35,12 @@ func (p *ConfigParser) Sections() []string {
 // Returns nil if no error and the section is created
 func (p *ConfigParser) AddSection(section string) error {
 	if p.isDefaultSection(section) {
-		return fmt.Errorf("Invalid section name: '%s'", section)
+		return fmt.Errorf("invalid section name: %q", section)
 	} else if p.HasSection(section) {
-		return fmt.Errorf("Section '%s' already exists", section)
+		return fmt.Errorf("section %q already exists", section)
 	}
 	p.config[section] = newSection(section)
+
 	return nil
 }
 
@@ -48,6 +50,7 @@ func (p *ConfigParser) AddSection(section string) error {
 // The DEFAULT section is not acknowledged.
 func (p *ConfigParser) HasSection(section string) bool {
 	_, present := p.config[section]
+
 	return present
 }
 
@@ -70,6 +73,7 @@ func (p *ConfigParser) Options(section string) ([]string, error) {
 		options = append(options, option)
 	}
 	sort.Strings(options)
+
 	return options, nil
 }
 
@@ -93,6 +97,7 @@ func (p *ConfigParser) Get(section, option string) (string, error) {
 	} else if value, err := p.defaults.Get(option); err == nil {
 		return value, nil
 	}
+
 	return "", getNoOptionError(section, option)
 }
 
@@ -113,6 +118,7 @@ func (p *ConfigParser) ItemsWithDefaults(section string) (Dict, error) {
 	for k, v := range p.config[section].Items() {
 		s[k] = v
 	}
+
 	return s, nil
 }
 
@@ -124,6 +130,7 @@ func (p *ConfigParser) Items(section string) (Dict, error) {
 	if !p.HasSection(section) {
 		return nil, getNoSectionError(section)
 	}
+
 	return p.config[section].Items(), nil
 }
 
@@ -140,8 +147,8 @@ func (p *ConfigParser) Set(section, option, value string) error {
 	} else {
 		setSection = p.config[section]
 	}
-	setSection.Add(option, value)
-	return nil
+
+	return setSection.Add(option, value)
 }
 
 func (p *ConfigParser) GetInt64(section, option string) (int64, error) {
@@ -153,6 +160,7 @@ func (p *ConfigParser) GetInt64(section, option string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
+
 	return value, nil
 }
 
@@ -165,6 +173,7 @@ func (p *ConfigParser) GetFloat64(section, option string) (float64, error) {
 	if err != nil {
 		return 0, err
 	}
+
 	return value, nil
 }
 
@@ -175,8 +184,9 @@ func (p *ConfigParser) GetBool(section, option string) (bool, error) {
 	}
 	booleanValue, present := boolMapping[result]
 	if !present {
-		return false, fmt.Errorf("Not a boolean: '%s'", result)
+		return false, fmt.Errorf("not a boolean: %q", result)
 	}
+
 	return booleanValue, nil
 }
 
@@ -185,6 +195,7 @@ func (p *ConfigParser) RemoveSection(section string) error {
 		return getNoSectionError(section)
 	}
 	delete(p.config, section)
+
 	return nil
 }
 
@@ -197,8 +208,8 @@ func (p *ConfigParser) HasOption(section, option string) (bool, error) {
 	} else {
 		s = p.config[section]
 	}
-
 	_, err := s.Get(option)
+
 	return err == nil, nil
 }
 
@@ -211,5 +222,6 @@ func (p *ConfigParser) RemoveOption(section, option string) error {
 	} else {
 		s = p.config[section]
 	}
+
 	return s.Remove(option)
 }

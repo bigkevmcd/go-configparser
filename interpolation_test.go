@@ -9,7 +9,7 @@ import (
 // GetInterpolated(section, option) should return an appropriate error if the section does not exist
 func (s *ConfigParserSuite) TestGetInterpolatedWithMissingSection(c *C) {
 	_, err := s.p.GetInterpolated("unknown", "missing")
-	c.Assert(err, ErrorMatches, "No section: 'unknown'")
+	c.Assert(err, ErrorMatches, "no section: \"unknown\"")
 }
 
 // GetInterpolated(section, option) should interpolate the result

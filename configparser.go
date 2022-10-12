@@ -16,10 +16,9 @@ const (
 )
 
 var (
-	sectionHeader    = regexp.MustCompile("\\[([^]]+)\\]")
-	keyValue         = regexp.MustCompile("([^:=\\s][^:=]*)\\s*(?P<vi>[:=])\\s*(.*)$")
-	continuationLine = regexp.MustCompile("\\w+(.*)$")
-	interpolater     = regexp.MustCompile("%\\(([^)]*)\\)s")
+	sectionHeader = regexp.MustCompile(`\[([^]]+)\]`)
+	keyValue      = regexp.MustCompile(`([^:=\s][^:=]*)\s*(?P<vi>[:=])\s*(.*)$`)
+	interpolater  = regexp.MustCompile(`%\(([^)]*)\)s`)
 )
 
 var boolMapping = map[string]bool{
@@ -59,11 +58,11 @@ func (d Dict) Keys() []string {
 }
 
 func getNoSectionError(section string) error {
-	return fmt.Errorf("No section: '%s'", section)
+	return fmt.Errorf("no section: %q", section)
 }
 
 func getNoOptionError(section, option string) error {
-	return fmt.Errorf("No option '%s' in section: '%s'", option, section)
+	return fmt.Errorf("no option %q in section: %q", option, section)
 }
 
 // New creates a new ConfigParser.
@@ -76,15 +75,17 @@ func New() *ConfigParser {
 
 // NewWithDefaults allows creation of a new ConfigParser with a pre-existing
 // Dict.
-func NewWithDefaults(defaults Dict) *ConfigParser {
+func NewWithDefaults(defaults Dict) (*ConfigParser, error) {
 	p := ConfigParser{
 		config:   make(Config),
 		defaults: newSection(defaultSectionName),
 	}
 	for key, value := range defaults {
-		p.defaults.Add(key, value)
+		if err := p.defaults.Add(key, value); err != nil {
+			return nil, fmt.Errorf("failed to add %q to %q: %w", key, value, err)
+		}
 	}
-	return &p
+	return &p, nil
 }
 
 // NewConfigParserFromFile creates a new ConfigParser struct populated from the
@@ -132,9 +133,13 @@ func parseFile(file *os.File) (*ConfigParser, error) {
 			}
 		} else if match = keyValue.FindStringSubmatch(line); len(match) > 0 {
 			if curSect == nil {
-				return nil, fmt.Errorf("Missing Section Header: %d %s", lineNo, line)
+				return nil, fmt.Errorf("missing section header: %d %s", lineNo, line)
 			}
-			curSect.Add(strings.TrimSpace(match[1]), match[3])
+			key := strings.TrimSpace(match[1])
+			value := match[3]
+			if err := curSect.Add(key, value); err != nil {
+				return nil, fmt.Errorf("failed to add %q = %q: %w", key, value, err)
+			}
 		}
 	}
 	return p, nil
@@ -143,10 +148,10 @@ func parseFile(file *os.File) (*ConfigParser, error) {
 // Parse takes a filename and parses it into a ConfigParser value.
 func Parse(filename string) (*ConfigParser, error) {
 	file, err := os.Open(filename)
-	defer file.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer file.Close()
 	p, err := parseFile(file)
 	if err != nil {
 		return nil, err
@@ -174,10 +179,10 @@ func writeSection(file *os.File, delimiter string, section *Section) error {
 // file with the specified delimiter.
 func (p *ConfigParser) SaveWithDelimiter(filename, delimiter string) error {
 	f, err := os.Create(filename)
-	defer f.Close()
 	if err != nil {
 		return err
 	}
+	defer f.Close()
 
 	if len(p.defaults.Options()) > 0 {
 		err = writeSection(f, delimiter, p.defaults)

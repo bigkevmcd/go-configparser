@@ -39,29 +39,28 @@ func (s *ConfigParserSuite) TestAddSection(c *gc.C) {
 func (s *ConfigParserSuite) TestAddSectionDuplicate(c *gc.C) {
 	err := s.p.AddSection("follower")
 
-	c.Assert(err, gc.ErrorMatches, "Section 'follower' already exists")
+	c.Assert(err, gc.ErrorMatches, "section \"follower\" already exists")
 }
 
 // AddSection(section) should not error if we attempt to add a default section
 func (s *ConfigParserSuite) TestAddSectionDefaultLowercase(c *gc.C) {
 	newParser := configparser.New()
-	err := newParser.AddSection("default")
 
-	c.Assert(err, gc.IsNil)
+	assertSuccessful(c, newParser.AddSection("default"))
 }
 
 // AddSection(section) should return an appropriate error if we attempt to add a DEFAULT section
 func (s *ConfigParserSuite) TestAddSectionDefaultUppercase(c *gc.C) {
 	newParser := configparser.New()
-	err := newParser.AddSection("DEFAULT")
 
-	c.Assert(err, gc.ErrorMatches, "Invalid section name: 'DEFAULT'")
+	err := newParser.AddSection("DEFAULT")
+	c.Assert(err, gc.ErrorMatches, "invalid section name: \"DEFAULT\"")
 }
 
 // Options(section) should return an appropriate error if the section doesn't exist
 func (s *ConfigParserSuite) TestOptionsWithNoSection(c *gc.C) {
 	_, err := s.p.Options("unknown")
-	c.Assert(err, gc.ErrorMatches, "No section: 'unknown'")
+	c.Assert(err, gc.ErrorMatches, "no section: \"unknown\"")
 }
 
 // Options(section) should return a list of option names for a given section mixed in with the defaults
@@ -74,7 +73,8 @@ func (s *ConfigParserSuite) TestOptionsWithSection(c *gc.C) {
 // Options(section) should return an empty slice if there are no options in a section
 func (s *ConfigParserSuite) TestOptionsWithEmptySection(c *gc.C) {
 	newParser := configparser.New()
-	newParser.AddSection("testing")
+	assertSuccessful(c, newParser.AddSection("testing"))
+
 	result, err := newParser.Options("testing")
 	c.Assert(err, gc.IsNil)
 	c.Assert(result, gc.DeepEquals, []string{})
@@ -83,13 +83,13 @@ func (s *ConfigParserSuite) TestOptionsWithEmptySection(c *gc.C) {
 // Get(section, option) should return an appropriate error if the section does not exist
 func (s *ConfigParserSuite) TestGetWithMissingSection(c *gc.C) {
 	_, err := s.p.Get("missing", "value")
-	c.Assert(err, gc.ErrorMatches, "No section: 'missing'")
+	c.Assert(err, gc.ErrorMatches, "no section: \"missing\"")
 }
 
 // Get(section, option) should return an appropriate error if the option does not exist within the section
 func (s *ConfigParserSuite) TestGetWithMissingOptionInSection(c *gc.C) {
 	_, err := s.p.Get("follower", "missing")
-	c.Assert(err, gc.ErrorMatches, "No option 'missing' in section: 'follower'")
+	c.Assert(err, gc.ErrorMatches, "no option \"missing\" in section: \"follower\"")
 }
 
 // Get(section, option) should return the option value for the named section
@@ -125,7 +125,7 @@ func (s *ConfigParserSuite) TestGetDefaultSection(c *gc.C) {
 // Get(section, option) should return an error as the DEFAULT section is case-sensitive
 func (s *ConfigParserSuite) TestGetDefaultSectionLowercase(c *gc.C) {
 	_, err := s.p.Get("default", "bin_dir")
-	c.Assert(err, gc.ErrorMatches, "No section: 'default'")
+	c.Assert(err, gc.ErrorMatches, "no section: \"default\"")
 }
 
 // Get(section, option) should lookup the value in the default section if it doesn't exist in the section
@@ -145,19 +145,20 @@ func (s *ConfigParserSuite) TestGetCaseInsensitiveWithOptions(c *gc.C) {
 // Set(section, option, value) should return an error if the section doesn't exist
 func (s *ConfigParserSuite) TestSetWithNoSection(c *gc.C) {
 	err := s.p.Set("unknown", "my_value", "testing")
-	c.Assert(err, gc.ErrorMatches, "No section: 'unknown'")
+	c.Assert(err, gc.ErrorMatches, "no section: \"unknown\"")
 }
 
 // Set(section, option, value) should set a default value if the section is the DEFAULT section
 func (s *ConfigParserSuite) TestSetDefaultSection(c *gc.C) {
-	s.p.Set("DEFAULT", "my_value", "testing")
+	err := s.p.Set("DEFAULT", "my_value", "testing")
+	c.Assert(err, gc.IsNil)
 	defaults := s.p.Defaults()
 	c.Assert(defaults["my_value"], gc.Equals, "testing")
 }
 
 // Set(section, option, value) should record the specified value in the correct section
 func (s *ConfigParserSuite) TestSet(c *gc.C) {
-	s.p.Set("follower", "my_value", "newvalue")
+	assertSuccessful(c, s.p.Set("follower", "my_value", "newvalue"))
 	result, err := s.p.Get("follower", "my_value")
 	c.Assert(err, gc.IsNil)
 	c.Assert(result, gc.Equals, "newvalue")
@@ -177,7 +178,7 @@ func (s *ConfigParserSuite) TestHasSectionWithSection(c *gc.C) {
 // Items(section) should return an appropriate error if the section doesn't exist
 func (s *ConfigParserSuite) TestItemsWithNoSection(c *gc.C) {
 	_, err := s.p.Items("unknown")
-	c.Assert(err, gc.ErrorMatches, "No section: 'unknown'")
+	c.Assert(err, gc.ErrorMatches, "no section: \"unknown\"")
 }
 
 // Items(section) should return a copy of the dict for the section
@@ -209,8 +210,10 @@ func (s *ConfigParserSuite) TestItemsWithDefaults(c *gc.C) {
 // GetInt64(section, option) should return the option value for the named section as an Int64 value
 func (s *ConfigParserSuite) TestGetInt64(c *gc.C) {
 	newParser := configparser.New()
-	newParser.AddSection("testing")
-	newParser.Set("testing", "value", "200")
+	err := newParser.AddSection("testing")
+	c.Assert(err, gc.IsNil)
+	err = newParser.Set("testing", "value", "200")
+	c.Assert(err, gc.IsNil)
 
 	result, err := newParser.GetInt64("testing", "value")
 	c.Assert(err, gc.IsNil)
@@ -220,17 +223,18 @@ func (s *ConfigParserSuite) TestGetInt64(c *gc.C) {
 // GetInt64(section, option) should return an appropriate error if the option does not exist
 func (s *ConfigParserSuite) TestGetInt64MissingOption(c *gc.C) {
 	newParser := configparser.New()
-	newParser.AddSection("testing")
+	err := newParser.AddSection("testing")
+	c.Assert(err, gc.IsNil)
 
-	_, err := newParser.GetInt64("testing", "value")
-	c.Assert(err, gc.ErrorMatches, "No option 'value' in section: 'testing'")
+	_, err = newParser.GetInt64("testing", "value")
+	c.Assert(err, gc.ErrorMatches, "no option \"value\" in section: \"testing\"")
 }
 
 // GetInt64(section, option) should return an appropriate error if the value can't be converted
 func (s *ConfigParserSuite) TestGetInt64InvalidOption(c *gc.C) {
 	newParser := configparser.New()
-	newParser.AddSection("testing")
-	newParser.Set("testing", "value", "invalid")
+	assertSuccessful(c, newParser.AddSection("testing"))
+	assertSuccessful(c, newParser.Set("testing", "value", "invalid"))
 
 	_, err := newParser.GetInt64("testing", "value")
 	c.Assert(err, gc.ErrorMatches, ".*invalid syntax.*")
@@ -239,8 +243,8 @@ func (s *ConfigParserSuite) TestGetInt64InvalidOption(c *gc.C) {
 // GetFloat64(section, option) should return the option value for the named section as a Float64 value
 func (s *ConfigParserSuite) TestGetFloat64(c *gc.C) {
 	newParser := configparser.New()
-	newParser.AddSection("testing")
-	newParser.Set("testing", "value", "3.14159265")
+	assertSuccessful(c, newParser.AddSection("testing"))
+	assertSuccessful(c, newParser.Set("testing", "value", "3.14159265"))
 
 	result, err := newParser.GetFloat64("testing", "value")
 	c.Assert(err, gc.IsNil)
@@ -253,7 +257,7 @@ func (s *ConfigParserSuite) TestGetFloat64MissingOption(c *gc.C) {
 	newParser.AddSection("testing")
 
 	_, err := newParser.GetFloat64("testing", "value")
-	c.Assert(err, gc.ErrorMatches, "No option 'value' in section: 'testing'")
+	c.Assert(err, gc.ErrorMatches, "no option \"value\" in section: \"testing\"")
 }
 
 // GetFloat64(section, option) should return an appropriate error if the value can't be converted
@@ -293,13 +297,13 @@ func (s *ConfigParserSuite) TestGetBoolInvalidValue(c *gc.C) {
 	newParser.Set("testing", "value", "testing")
 
 	_, err := newParser.GetBool("testing", "value")
-	c.Assert(err, gc.ErrorMatches, "Not a boolean: 'testing'")
+	c.Assert(err, gc.ErrorMatches, "not a boolean: \"testing\"")
 }
 
 // RemoveSection(section) should return an appropriate error if the section doesn't exist
 func (s *ConfigParserSuite) TestRemoveSectionMissingSection(c *gc.C) {
 	err := s.p.RemoveSection("unknown")
-	c.Assert(err, gc.ErrorMatches, "No section: 'unknown'")
+	c.Assert(err, gc.ErrorMatches, "no section: \"unknown\"")
 }
 
 // RemoveSection(section) should return an appropriate error if the section doesn't exist
@@ -317,13 +321,13 @@ func (s *ConfigParserSuite) TestRemoveSection(c *gc.C) {
 // RemoveOption(section, option) should return an appropriate error if the section doesn't exist
 func (s *ConfigParserSuite) TestRemoveOptionMissingSection(c *gc.C) {
 	err := s.p.RemoveOption("unknown", "web")
-	c.Assert(err, gc.ErrorMatches, "No section: 'unknown'")
+	c.Assert(err, gc.ErrorMatches, "no section: \"unknown\"")
 }
 
 // RemoveOption(section, option) should return an appropriate error if the option doesn't exist
 func (s *ConfigParserSuite) TestRemoveOptionMissingOption(c *gc.C) {
 	err := s.p.RemoveOption("follower", "unknown")
-	c.Assert(err, gc.ErrorMatches, "No option 'unknown' in section: 'follower'")
+	c.Assert(err, gc.ErrorMatches, "no option \"unknown\" in section: \"follower\"")
 }
 
 // RemoveOption(section, option) should remove an option from the specified
@@ -340,7 +344,7 @@ func (s *ConfigParserSuite) TestRemoveOption(c *gc.C) {
 // match the specified option exactly.
 func (s *ConfigParserSuite) TestRemoveOptionMatchesPrecisely(c *gc.C) {
 	err := s.p.RemoveOption("follower", "max_build_TIME")
-	c.Assert(err, gc.ErrorMatches, "No option 'max_build_TIME' in section: 'follower'")
+	c.Assert(err, gc.ErrorMatches, "no option \"max_build_TIME\" in section: \"follower\"")
 }
 
 // HasOption(section, option) should return true if section is default and the option is a default
@@ -353,7 +357,7 @@ func (s *ConfigParserSuite) TestHasOptionFromDefaults(c *gc.C) {
 // HasOption(section, option) should return an appropriate error if the section does not exist
 func (s *ConfigParserSuite) TestHasOptionMissingSection(c *gc.C) {
 	_, err := s.p.HasOption("unknown", "missing")
-	c.Assert(err, gc.ErrorMatches, "No section: 'unknown'")
+	c.Assert(err, gc.ErrorMatches, "no section: \"unknown\"")
 }
 
 // Options(section) should strip whitespace from the keys when parsing sections.

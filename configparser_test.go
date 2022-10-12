@@ -3,8 +3,8 @@ package configparser_test
 import (
 	"github.com/bigkevmcd/go-configparser"
 	. "gopkg.in/check.v1"
+	gc "gopkg.in/check.v1"
 
-	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -29,7 +29,8 @@ func (s *ConfigParserSuite) TestNewWithDefaults(c *C) {
 	n := make(configparser.Dict)
 	n["testing"] = "value"
 
-	p := configparser.NewWithDefaults(n)
+	p, err := configparser.NewWithDefaults(n)
+	c.Assert(err, IsNil)
 
 	d := p.Defaults()
 	c.Assert(d["testing"], Equals, "value")
@@ -39,7 +40,8 @@ func (s *ConfigParserSuite) TestNewWithDefaults(c *C) {
 func (s *ConfigParserSuite) TestNewWithDefaultsCopied(c *C) {
 	n := make(configparser.Dict)
 	n["testing"] = "value"
-	p := configparser.NewWithDefaults(n)
+	p, err := configparser.NewWithDefaults(n)
+	c.Assert(err, IsNil)
 
 	n["testing2"] = "myvalue"
 
@@ -52,14 +54,19 @@ func (s *ConfigParserSuite) TestNewWithDefaultsCopied(c *C) {
 func (s *ConfigParserSuite) TestSaveWithDelimiter(c *C) {
 	p := configparser.New()
 
-	p.AddSection("testing")
-	p.Set("testing", "myoption", "value")
-	p.AddSection("othersection")
-	p.Set("othersection", "newoption", "novalue")
-	p.Set("othersection", "myoption", "myvalue")
+	err := p.AddSection("testing")
+	c.Assert(err, IsNil)
+	err = p.Set("testing", "myoption", "value")
+	c.Assert(err, IsNil)
+	err = p.AddSection("othersection")
+	c.Assert(err, IsNil)
+	err = p.Set("othersection", "newoption", "novalue")
+	c.Assert(err, IsNil)
+	err = p.Set("othersection", "myoption", "myvalue")
+	c.Assert(err, IsNil)
 
 	tempfile := path.Join(c.MkDir(), "config.cfg")
-	err := p.SaveWithDelimiter(tempfile, "=")
+	err = p.SaveWithDelimiter(tempfile, "=")
 	c.Assert(err, IsNil)
 
 	f, err := os.Open(tempfile)
@@ -68,7 +75,7 @@ func (s *ConfigParserSuite) TestSaveWithDelimiter(c *C) {
 	data, err := ioutil.ReadAll(f)
 	c.Assert(err, IsNil)
 	f.Close()
-	c.Assert(fmt.Sprintf("%s", data), Equals, "[othersection]\nmyoption = myvalue\nnewoption = novalue\n\n[testing]\nmyoption = value\n\n")
+	c.Assert(string(data), Equals, "[othersection]\nmyoption = myvalue\nnewoption = novalue\n\n[testing]\nmyoption = value\n\n")
 }
 
 // Save(filename) should correctly write out the defaults section with the
@@ -76,16 +83,22 @@ func (s *ConfigParserSuite) TestSaveWithDelimiter(c *C) {
 func (s *ConfigParserSuite) TestSaveWithDelimiterAndDefaults(c *C) {
 	n := make(configparser.Dict)
 	n["testing"] = "value"
-	p := configparser.NewWithDefaults(n)
+	p, err := configparser.NewWithDefaults(n)
+	c.Assert(err, IsNil)
 
-	p.AddSection("testing")
-	p.Set("testing", "myoption", "value")
-	p.AddSection("othersection")
-	p.Set("othersection", "newoption", "novalue")
-	p.Set("othersection", "myoption", "myvalue")
+	err = p.AddSection("testing")
+	c.Assert(err, IsNil)
+	err = p.Set("testing", "myoption", "value")
+	c.Assert(err, IsNil)
+	err = p.AddSection("othersection")
+	c.Assert(err, IsNil)
+	err = p.Set("othersection", "newoption", "novalue")
+	c.Assert(err, IsNil)
+	err = p.Set("othersection", "myoption", "myvalue")
+	c.Assert(err, IsNil)
 
 	tempfile := path.Join(c.MkDir(), "config.cfg")
-	err := p.SaveWithDelimiter(tempfile, "=")
+	err = p.SaveWithDelimiter(tempfile, "=")
 	c.Assert(err, IsNil)
 
 	f, err := os.Open(tempfile)
@@ -94,5 +107,9 @@ func (s *ConfigParserSuite) TestSaveWithDelimiterAndDefaults(c *C) {
 	data, err := ioutil.ReadAll(f)
 	c.Assert(err, IsNil)
 	f.Close()
-	c.Assert(fmt.Sprintf("%s", data), Equals, "[DEFAULT]\ntesting = value\n\n[othersection]\nmyoption = myvalue\nnewoption = novalue\n\n[testing]\nmyoption = value\n\n")
+	c.Assert(string(data), Equals, "[DEFAULT]\ntesting = value\n\n[othersection]\nmyoption = myvalue\nnewoption = novalue\n\n[testing]\nmyoption = value\n\n")
+}
+
+func assertSuccessful(c *gc.C, err error) {
+	c.Assert(err, gc.IsNil)
 }

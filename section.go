@@ -10,9 +10,9 @@ type Section struct {
 
 func (s *Section) Add(key, value string) error {
 	lookupKey := s.safeKey(key)
-
 	s.options[key] = s.safeValue(value)
 	s.lookup[lookupKey] = key
+
 	return nil
 }
 
@@ -24,6 +24,7 @@ func (s *Section) Get(key string) (string, error) {
 	if value, present := s.options[lookupKey]; present {
 		return value, nil
 	}
+
 	return "", getNoOptionError(s.Name, key)
 }
 
@@ -53,6 +54,7 @@ func (s *Section) Remove(key string) error {
 	// that the passed key to be removed matches the options key.
 	delete(s.lookup, s.safeKey(key))
 	delete(s.options, key)
+
 	return nil
 }
 

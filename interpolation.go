@@ -68,8 +68,8 @@ func (p *ConfigParser) ItemsWithDefaultsInterpolated(section string) (Dict, erro
 		return nil, err
 	}
 	// TOOD: Optimise this...instantiate the ChainMap and delegate to interpolate()
-	for k, v := range s {
-		v, err = p.GetInterpolated(section, k)
+	for k := range s {
+		v, err := p.GetInterpolated(section, k)
 		if err != nil {
 			return nil, err
 		}
