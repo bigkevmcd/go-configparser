@@ -3,6 +3,7 @@ package configparser
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"regexp"
 	"sort"
@@ -98,11 +99,10 @@ func NewConfigParserFromFile(filename string) (*ConfigParser, error) {
 	return p, nil
 }
 
-func parseFile(file *os.File) (*ConfigParser, error) {
+// ParseReader parses a ConfigParser from the provided input.
+func ParseReader(in io.Reader) (*ConfigParser, error) {
 	p := New()
-	defer file.Close()
-
-	reader := bufio.NewReader(file)
+	reader := bufio.NewReader(in)
 	var lineNo int
 	var err error
 	var curSect *Section
@@ -152,7 +152,7 @@ func Parse(filename string) (*ConfigParser, error) {
 		return nil, err
 	}
 	defer file.Close()
-	p, err := parseFile(file)
+	p, err := ParseReader(file)
 	if err != nil {
 		return nil, err
 	}
