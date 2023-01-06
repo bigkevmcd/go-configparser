@@ -114,7 +114,6 @@ func (s *ConfigParserSuite) TestSaveWithDelimiterAndDefaults(c *C) {
 
 // ParseFromReader() parses the Config data from an io.Reader.
 func (s *ConfigParserSuite) TestParseFromReader(c *gc.C) {
-
 	parsed, err := configparser.ParseReader(strings.NewReader("[DEFAULT]\ntesting = value\n\n[othersection]\nmyoption = myvalue\nnewoption = novalue\nfinal = foo[bar]\n\n[testing]\nmyoption = value\n\n"))
 	c.Assert(err, gc.IsNil)
 
