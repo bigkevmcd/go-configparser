@@ -17,7 +17,7 @@ const (
 )
 
 var (
-	sectionHeader = regexp.MustCompile(`^\[([^]]+)\]$`) 
+	sectionHeader = regexp.MustCompile(`^\[([^]]+)\]$`)
 	keyValue      = regexp.MustCompile(`([^:=\s][^:=]*)\s*(?P<vi>[:=])\s*(.*)$`)
 	interpolater  = regexp.MustCompile(`%\(([^)]*)\)s`)
 )
