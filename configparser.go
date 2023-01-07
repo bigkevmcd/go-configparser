@@ -17,7 +17,7 @@ const (
 )
 
 var (
-	sectionHeader = regexp.MustCompile(`\[([^]]+)\]`)
+	sectionHeader = regexp.MustCompile(`^\[([^]]+)\]$`)
 	keyValue      = regexp.MustCompile(`([^:=\s][^:=]*)\s*(?P<vi>[:=])\s*(.*)$`)
 	interpolater  = regexp.MustCompile(`%\(([^)]*)\)s`)
 )
@@ -116,7 +116,7 @@ func ParseReader(in io.Reader) (*ConfigParser, error) {
 		if len(l) == 0 {
 			continue
 		}
-		line := strings.TrimFunc(string(l), unicode.IsSpace)
+		line := strings.TrimFunc(string(l), unicode.IsSpace) // ensures sectionHeader regex will match
 
 		// Skip comment lines and empty lines
 		if strings.HasPrefix(line, "#") || line == "" {

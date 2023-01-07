@@ -114,12 +114,12 @@ func (s *ConfigParserSuite) TestSaveWithDelimiterAndDefaults(c *C) {
 
 // ParseFromReader() parses the Config data from an io.Reader.
 func (s *ConfigParserSuite) TestParseFromReader(c *gc.C) {
-	parsed, err := configparser.ParseReader(strings.NewReader("[DEFAULT]\ntesting = value\n\n[othersection]\nmyoption = myvalue\nnewoption = novalue\n\n[testing]\nmyoption = value\n\n"))
+	parsed, err := configparser.ParseReader(strings.NewReader("[DEFAULT]\ntesting = value\n\n[othersection]\nmyoption = myvalue\nnewoption = novalue\nfinal = foo[bar]\n\n[testing]\nmyoption = value\n\n"))
 	c.Assert(err, gc.IsNil)
 
 	result, err := parsed.Items("othersection")
 	c.Assert(err, gc.IsNil)
-	c.Assert(result, gc.DeepEquals, configparser.Dict{"myoption": "myvalue", "newoption": "novalue"})
+	c.Assert(result, gc.DeepEquals, configparser.Dict{"myoption": "myvalue", "newoption": "novalue", "final": "foo[bar]"})
 }
 
 func assertSuccessful(c *gc.C, err error) {
