@@ -2,6 +2,7 @@ package configparser
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -22,9 +23,6 @@ var (
 	keyWNoValue   = regexp.MustCompile(`([^:=\s][^:=]*)\s*((?P<vi>[:=])\s*(.*)$)?`)
 	interpolater  = regexp.MustCompile(`%\(([^)]*)\)s`)
 )
-
-// AllowNoValue allows parser to save options without values as empty strings.
-var AllowNoValue bool
 
 var boolMapping = map[string]bool{
 	"1":     true,
@@ -48,6 +46,12 @@ type Config map[string]*Section
 type ConfigParser struct {
 	config   Config
 	defaults *Section
+	opt      *Options
+}
+
+// Options allows to control parser behavior.
+type Options struct {
+	AllowNoValue bool
 }
 
 // Keys returns a sorted slice of keys
@@ -75,22 +79,29 @@ func New() *ConfigParser {
 	return &ConfigParser{
 		config:   make(Config),
 		defaults: newSection(defaultSectionName),
+		opt:      &Options{},
+	}
+}
+
+// NewWithOptions creates a new ConfigParser with options.
+func NewWithOptions(opt *Options) *ConfigParser {
+	return &ConfigParser{
+		config:   make(Config),
+		defaults: newSection(defaultSectionName),
+		opt:      opt,
 	}
 }
 
 // NewWithDefaults allows creation of a new ConfigParser with a pre-existing
 // Dict.
 func NewWithDefaults(defaults Dict) (*ConfigParser, error) {
-	p := ConfigParser{
-		config:   make(Config),
-		defaults: newSection(defaultSectionName),
-	}
+	p := New()
 	for key, value := range defaults {
 		if err := p.defaults.Add(key, value); err != nil {
 			return nil, fmt.Errorf("failed to add %q to %q: %w", key, value, err)
 		}
 	}
-	return &p, nil
+	return p, nil
 }
 
 // NewConfigParserFromFile creates a new ConfigParser struct populated from the
@@ -106,53 +117,17 @@ func NewConfigParserFromFile(filename string) (*ConfigParser, error) {
 // ParseReader parses a ConfigParser from the provided input.
 func ParseReader(in io.Reader) (*ConfigParser, error) {
 	p := New()
-	reader := bufio.NewReader(in)
-	var lineNo int
-	var err error
-	var curSect *Section
+	err := p.ParseReader(in)
 
-	for err == nil {
-		l, _, err := reader.ReadLine()
-		if err != nil {
-			break
-		}
-		lineNo++
-		if len(l) == 0 {
-			continue
-		}
-		line := strings.TrimFunc(string(l), unicode.IsSpace) // ensures sectionHeader regex will match
+	return p, err
+}
 
-		// Skip comment lines and empty lines
-		if strings.HasPrefix(line, "#") || line == "" {
-			continue
-		}
+// ParseReaderWithOptions parses a ConfigParser from the provided input with given options.
+func ParseReaderWithOptions(in io.Reader, opt *Options) (*ConfigParser, error) {
+	p := NewWithOptions(opt)
+	err := p.ParseReader(in)
 
-		if match := sectionHeader.FindStringSubmatch(line); len(match) > 0 {
-			section := match[1]
-			if section == defaultSectionName {
-				curSect = p.defaults
-			} else if _, present := p.config[section]; !present {
-				curSect = newSection(section)
-				p.config[section] = curSect
-			}
-		} else if match = keyValue.FindStringSubmatch(line); len(match) > 0 {
-			if curSect == nil {
-				return nil, fmt.Errorf("missing section header: %d %s", lineNo, line)
-			}
-			key := strings.TrimSpace(match[1])
-			value := match[3]
-			if err := curSect.Add(key, value); err != nil {
-				return nil, fmt.Errorf("failed to add %q = %q: %w", key, value, err)
-			}
-		} else if match = keyWNoValue.FindStringSubmatch(line); len(match) > 0 && AllowNoValue && curSect != nil {
-			key := strings.TrimSpace(match[1])
-			value := match[4]
-			if err := curSect.Add(key, value); err != nil {
-				return nil, fmt.Errorf("failed to add %q = %q: %w", key, value, err)
-			}
-		}
-	}
-	return p, nil
+	return p, err
 }
 
 // Parse takes a filename and parses it into a ConfigParser value.
@@ -167,6 +142,17 @@ func Parse(filename string) (*ConfigParser, error) {
 		return nil, err
 	}
 	return p, nil
+}
+
+// ParseWithOptions takes a filename and parses it into a ConfigParser value with given options.
+func ParseWithOptions(filename string, opt *Options) (*ConfigParser, error) {
+	p := NewWithOptions(opt)
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+	err = p.ParseReader(bytes.NewReader(data))
+	return p, err
 }
 
 func writeSection(file *os.File, delimiter string, section *Section) error {
@@ -205,6 +191,58 @@ func (p *ConfigParser) SaveWithDelimiter(filename, delimiter string) error {
 		err = writeSection(f, delimiter, p.config[s])
 		if err != nil {
 			return err
+		}
+	}
+
+	return nil
+}
+
+// ParseReader parses data into ConfigParser from provided reader.
+func (p *ConfigParser) ParseReader(in io.Reader) error {
+	reader := bufio.NewReader(in)
+	var lineNo int
+	var err error
+	var curSect *Section
+
+	for err == nil {
+		l, _, err := reader.ReadLine()
+		if err != nil {
+			break
+		}
+		lineNo++
+		if len(l) == 0 {
+			continue
+		}
+		line := strings.TrimFunc(string(l), unicode.IsSpace) // ensures sectionHeader regex will match
+
+		// Skip comment lines and empty lines
+		if strings.HasPrefix(line, "#") || line == "" {
+			continue
+		}
+
+		if match := sectionHeader.FindStringSubmatch(line); len(match) > 0 {
+			section := match[1]
+			if section == defaultSectionName {
+				curSect = p.defaults
+			} else if _, present := p.config[section]; !present {
+				curSect = newSection(section)
+				p.config[section] = curSect
+			}
+		} else if match = keyValue.FindStringSubmatch(line); len(match) > 0 {
+			if curSect == nil {
+				return fmt.Errorf("missing section header: %d %s", lineNo, line)
+			}
+			key := strings.TrimSpace(match[1])
+			value := match[3]
+			if err := curSect.Add(key, value); err != nil {
+				return fmt.Errorf("failed to add %q = %q: %w", key, value, err)
+			}
+		} else if match = keyWNoValue.FindStringSubmatch(line); len(match) > 0 && p.opt.AllowNoValue && curSect != nil {
+			key := strings.TrimSpace(match[1])
+			value := match[4]
+			if err := curSect.Add(key, value); err != nil {
+				return fmt.Errorf("failed to add %q = %q: %w", key, value, err)
+			}
 		}
 	}
 

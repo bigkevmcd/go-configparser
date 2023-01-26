@@ -22,7 +22,7 @@ func (s *ConfigParserSuite) TestDefaultsWithNoDefaults(c *gc.C) {
 // Sections() should return a list of section names excluding [DEFAULT]
 func (s *ConfigParserSuite) TestSections(c *gc.C) {
 	result := s.p.Sections()
-	c.Assert(result, gc.DeepEquals, []string{"follower", "whitespace"})
+	c.Assert(result, gc.DeepEquals, []string{"empty", "follower", "whitespace"})
 }
 
 // AddSection(section) should create a new section in the configuration
