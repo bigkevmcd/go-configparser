@@ -18,9 +18,13 @@ const (
 
 var (
 	sectionHeader = regexp.MustCompile(`^\[([^]]+)\]$`)
-	keyValue      = regexp.MustCompile(`([^:=\s][^:=]*)\s*((?P<vi>[:=])\s*(.*)$)?`)
+	keyValue      = regexp.MustCompile(`([^:=\s][^:=]*)\s*(?P<vi>[:=])\s*(.*)$`)
+	keyWNoValue   = regexp.MustCompile(`([^:=\s][^:=]*)\s*((?P<vi>[:=])\s*(.*)$)?`)
 	interpolater  = regexp.MustCompile(`%\(([^)]*)\)s`)
 )
+
+// AllowNoValue allows parser to save options without values as empty strings.
+var AllowNoValue bool
 
 var boolMapping = map[string]bool{
 	"1":     true,
@@ -131,10 +135,16 @@ func ParseReader(in io.Reader) (*ConfigParser, error) {
 				curSect = newSection(section)
 				p.config[section] = curSect
 			}
-		} else if match = keyValue.FindStringSubmatch(line); len(match) > 0 && curSect != nil {
+		} else if match = keyValue.FindStringSubmatch(line); len(match) > 0 {
 			if curSect == nil {
 				return nil, fmt.Errorf("missing section header: %d %s", lineNo, line)
 			}
+			key := strings.TrimSpace(match[1])
+			value := match[3]
+			if err := curSect.Add(key, value); err != nil {
+				return nil, fmt.Errorf("failed to add %q = %q: %w", key, value, err)
+			}
+		} else if match = keyWNoValue.FindStringSubmatch(line); len(match) > 0 && AllowNoValue && curSect != nil {
 			key := strings.TrimSpace(match[1])
 			value := match[4]
 			if err := curSect.Add(key, value); err != nil {

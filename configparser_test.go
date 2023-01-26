@@ -122,6 +122,19 @@ func (s *ConfigParserSuite) TestParseFromReader(c *gc.C) {
 	c.Assert(result, gc.DeepEquals, configparser.Dict{"myoption": "myvalue", "newoption": "novalue", "final": "foo[bar]"})
 }
 
+// If AllowNoValue is set to true, parser should recognize options without values.
+func (s *ConfigParserSuite) TestParseFromReaderWNoValue(c *gc.C) {
+	configparser.AllowNoValue = true
+	defer func() { configparser.AllowNoValue = false }()
+
+	parsed, err := configparser.ParseReader(strings.NewReader("[empty]\noption\n\n"))
+	c.Assert(err, gc.IsNil)
+
+	ok, err := parsed.HasOption("empty", "option")
+	c.Assert(err, gc.IsNil)
+	c.Assert(ok, Equals, true)
+}
+
 func assertSuccessful(c *gc.C, err error) {
 	c.Assert(err, gc.IsNil)
 }

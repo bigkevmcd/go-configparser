@@ -22,7 +22,7 @@ func (s *ConfigParserSuite) TestDefaultsWithNoDefaults(c *gc.C) {
 // Sections() should return a list of section names excluding [DEFAULT]
 func (s *ConfigParserSuite) TestSections(c *gc.C) {
 	result := s.p.Sections()
-	c.Assert(result, gc.DeepEquals, []string{"empty", "follower", "whitespace"})
+	c.Assert(result, gc.DeepEquals, []string{"follower", "whitespace"})
 }
 
 // AddSection(section) should create a new section in the configuration
@@ -360,23 +360,9 @@ func (s *ConfigParserSuite) TestHasOptionMissingSection(c *gc.C) {
 	c.Assert(err, gc.ErrorMatches, "no section: \"unknown\"")
 }
 
-// HasOption(section, option) should return true if option exist but has no value
-func (s *ConfigParserSuite) TestHasOptionEmptyValue(c *gc.C) {
-	hasOption, err := s.p.HasOption("empty", "foo")
-	c.Assert(err, gc.IsNil)
-	c.Assert(hasOption, gc.Equals, true)
-}
-
 // Options(section) should strip whitespace from the keys when parsing sections.
 func (s *ConfigParserSuite) TestOptionsWithSectionStripsWhitespaceFromKeys(c *gc.C) {
 	result, err := s.p.Options("whitespace")
-	c.Assert(err, gc.IsNil)
-	c.Assert(result, gc.DeepEquals, []string{"base_dir", "bin_dir", "foo"})
-}
-
-// Options(section) should read an option without a value.
-func (s *ConfigParserSuite) TestOptionsWithOptionWithoutValue(c *gc.C) {
-	result, err := s.p.Options("empty")
 	c.Assert(err, gc.IsNil)
 	c.Assert(result, gc.DeepEquals, []string{"base_dir", "bin_dir", "foo"})
 }
