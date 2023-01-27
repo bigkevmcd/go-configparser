@@ -124,8 +124,9 @@ func (s *ConfigParserSuite) TestParseFromReader(c *gc.C) {
 
 // If AllowNoValue is set to true, parser should recognize options without values.
 func (s *ConfigParserSuite) TestParseReaderWithOptionsWNoValue(c *gc.C) {
-	opt := &configparser.Options{AllowNoValue: true}
-	parsed, err := configparser.ParseReaderWithOptions(strings.NewReader("[empty]\noption\n\n"), opt)
+	parsed, err := configparser.ParseReaderWithOptions(
+		strings.NewReader("[empty]\noption\n\n"), configparser.AllowNoValue,
+	)
 	c.Assert(err, gc.IsNil)
 
 	ok, err := parsed.HasOption("empty", "option")
@@ -138,8 +139,9 @@ func assertSuccessful(c *gc.C, err error) {
 }
 
 func (s *ConfigParserSuite) TestParseWithOptions(c *gc.C) {
-	opt := &configparser.Options{AllowNoValue: true}
-	parsed, err := configparser.ParseWithOptions("testdata/example.cfg", opt)
+	parsed, err := configparser.ParseWithOptions(
+		"testdata/example.cfg", configparser.AllowNoValue,
+	)
 	c.Assert(err, gc.IsNil)
 
 	ok, err := parsed.HasOption("empty", "foo")

@@ -46,12 +46,7 @@ type Config map[string]*Section
 type ConfigParser struct {
 	config   Config
 	defaults *Section
-	opt      *Options
-}
-
-// Options allows to control parser behavior.
-type Options struct {
-	AllowNoValue bool
+	opt      *options
 }
 
 // Keys returns a sorted slice of keys
@@ -79,12 +74,17 @@ func New() *ConfigParser {
 	return &ConfigParser{
 		config:   make(Config),
 		defaults: newSection(defaultSectionName),
-		opt:      &Options{},
+		opt:      &options{},
 	}
 }
 
 // NewWithOptions creates a new ConfigParser with options.
-func NewWithOptions(opt *Options) *ConfigParser {
+func NewWithOptions(opts ...OptFunc) *ConfigParser {
+	opt := &options{}
+	for _, fn := range opts {
+		fn(opt)
+	}
+
 	return &ConfigParser{
 		config:   make(Config),
 		defaults: newSection(defaultSectionName),
@@ -123,8 +123,8 @@ func ParseReader(in io.Reader) (*ConfigParser, error) {
 }
 
 // ParseReaderWithOptions parses a ConfigParser from the provided input with given options.
-func ParseReaderWithOptions(in io.Reader, opt *Options) (*ConfigParser, error) {
-	p := NewWithOptions(opt)
+func ParseReaderWithOptions(in io.Reader, opts ...OptFunc) (*ConfigParser, error) {
+	p := NewWithOptions(opts...)
 	err := p.ParseReader(in)
 
 	return p, err
@@ -145,8 +145,8 @@ func Parse(filename string) (*ConfigParser, error) {
 }
 
 // ParseWithOptions takes a filename and parses it into a ConfigParser value with given options.
-func ParseWithOptions(filename string, opt *Options) (*ConfigParser, error) {
-	p := NewWithOptions(opt)
+func ParseWithOptions(filename string, opts ...OptFunc) (*ConfigParser, error) {
+	p := NewWithOptions(opts...)
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, err
@@ -237,7 +237,7 @@ func (p *ConfigParser) ParseReader(in io.Reader) error {
 			if err := curSect.Add(key, value); err != nil {
 				return fmt.Errorf("failed to add %q = %q: %w", key, value, err)
 			}
-		} else if match = keyWNoValue.FindStringSubmatch(line); len(match) > 0 && p.opt.AllowNoValue && curSect != nil {
+		} else if match = keyWNoValue.FindStringSubmatch(line); len(match) > 0 && p.opt.allowNoValue && curSect != nil {
 			key := strings.TrimSpace(match[1])
 			value := match[4]
 			if err := curSect.Add(key, value); err != nil {
