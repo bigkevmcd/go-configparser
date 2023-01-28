@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	sectionHeader = regexp.MustCompile(`^\[([^]]+)\]$`)
+	sectionHeader = regexp.MustCompile(`^\[([^]]+)\]`)
 	interpolater  = regexp.MustCompile(`%\(([^)]*)\)s`)
 )
 
@@ -47,7 +47,7 @@ type ConfigParser struct {
 
 // Keys returns a sorted slice of keys
 func (d Dict) Keys() []string {
-	var keys []string
+	keys := make([]string, 0, len(d))
 
 	for key := range d {
 		keys = append(keys, key)
@@ -228,7 +228,7 @@ func (p *ConfigParser) ParseReader(in io.Reader) error {
 		}
 
 		if match := sectionHeader.FindStringSubmatch(line); len(match) > 0 {
-			section := match[1]
+			section := p.opt.inlineCommentPrefixes.Split(match[1])
 			if section == p.opt.defaultSection {
 				curSect = p.defaults
 			} else if _, present := p.config[section]; !present {
