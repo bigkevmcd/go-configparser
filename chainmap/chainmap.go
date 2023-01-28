@@ -6,6 +6,7 @@ type ChainMap struct {
 	maps []Dict
 }
 
+// NewChainMap default interpolator.
 func New(dicts ...Dict) *ChainMap {
 	chainMap := &ChainMap{
 		maps: make([]Dict, 0),
@@ -13,6 +14,10 @@ func New(dicts ...Dict) *ChainMap {
 	chainMap.maps = append(chainMap.maps, dicts...)
 
 	return chainMap
+}
+
+func (c *ChainMap) Add(dicts ...Dict) {
+	c.maps = append(c.maps, dicts...)
 }
 
 func (c *ChainMap) Len() int {

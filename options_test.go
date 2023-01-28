@@ -7,12 +7,13 @@ import (
 	. "gopkg.in/check.v1"
 
 	"github.com/bigkevmcd/go-configparser"
+	"github.com/bigkevmcd/go-configparser/chainmap"
 )
 
 func (s *ConfigParserSuite) TestInterpolationOpt(c *C) {
 	parsed, err := configparser.ParseReaderWithOptions(
 		strings.NewReader("[DEFAULT]\ndir=/home\n[paths]\npath=%(dir)s/something\n\n"),
-		configparser.Interpolation(configparser.NewChainMap()),
+		configparser.Interpolation(chainmap.New()),
 	)
 	c.Assert(err, IsNil)
 

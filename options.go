@@ -1,6 +1,10 @@
 package configparser
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/bigkevmcd/go-configparser/chainmap"
+)
 
 const defaultSectionName = "DEFAULT"
 
@@ -63,7 +67,7 @@ func (pr Prefixes) Split(str string) string {
 // Interpolator defines interpolation instance.
 // For more info, check chainMap realisation.
 type Interpolator interface {
-	Add(...Dict)
+	Add(...chainmap.Dict)
 	Len() int
 	Get(string) string
 }
@@ -71,7 +75,7 @@ type Interpolator interface {
 // defaultOptions presets required options.
 func defaultOptions() *options {
 	return &options{
-		interpolation:   NewChainMap(),
+		interpolation:   chainmap.New(),
 		defaultSection:  defaultSectionName,
 		delimeters:      ":=",
 		commentPrefixes: Prefixes{"#"},

@@ -2,6 +2,8 @@ package configparser
 
 import (
 	"strings"
+
+	"github.com/bigkevmcd/go-configparser/chainmap"
 )
 
 const maxInterpolationDepth int = 10
@@ -23,7 +25,7 @@ func (p *ConfigParser) GetInterpolated(section, option string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	p.opt.interpolation.Add(Dict(p.Defaults()), Dict(o))
+	p.opt.interpolation.Add(chainmap.Dict(p.Defaults()), chainmap.Dict(o))
 	return p.getInterpolated(section, option, p.opt.interpolation)
 }
 
@@ -38,7 +40,7 @@ func (p *ConfigParser) GetInterpolatedWithVars(section, option string, v Dict) (
 	if err != nil {
 		return "", err
 	}
-	p.opt.interpolation.Add(Dict(p.Defaults()), Dict(o), Dict(v))
+	p.opt.interpolation.Add(chainmap.Dict(p.Defaults()), chainmap.Dict(o), chainmap.Dict(v))
 	return p.getInterpolated(section, option, p.opt.interpolation)
 }
 
