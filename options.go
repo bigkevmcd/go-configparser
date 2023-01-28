@@ -14,7 +14,7 @@ type options struct {
 	commentPrefixes       Prefixes
 	inlineCommentPrefixes Prefixes
 	defaultSection        string
-	delimeters            string
+	delimiters            string
 	converters            Converter
 	allowNoValue          bool
 	strict                bool
@@ -72,13 +72,13 @@ type Interpolator interface {
 	Get(string) string
 }
 
-// defaultOptions presets required options.
+// defaultOptions returns the struct of preset required options.
 func defaultOptions() *options {
 	return &options{
 		interpolation:   chainmap.New(),
 		defaultSection:  defaultSectionName,
-		delimeters:      ":=",
-		commentPrefixes: Prefixes{"#"},
+		delimiters:      ":=",
+		commentPrefixes: Prefixes{"#", ";"},
 	}
 }
 
@@ -100,7 +100,7 @@ func CommentPrefixes(pr Prefixes) optFunc {
 	}
 }
 
-// InlineCommentPrefixes sets a slice of inline comment delimeters.
+// InlineCommentPrefixes sets a slice of inline comment delimiters.
 // When parsing a value, it will be split with
 // the first match in this slice.
 func InlineCommentPrefixes(pr Prefixes) optFunc {
@@ -116,10 +116,10 @@ func DefaultSection(n string) optFunc {
 	}
 }
 
-// Delimeters sets a string of delimeters for option-value pairs.
-func Delimeters(d string) optFunc {
+// Delimiters sets a string of delimiters for option-value pairs.
+func Delimiters(d string) optFunc {
 	return func(o *options) {
-		o.delimeters = d
+		o.delimiters = d
 	}
 }
 
@@ -127,15 +127,14 @@ func Delimeters(d string) optFunc {
 // value of the Get* methods instead of the default convertion.
 //
 // NOTE: the caller should guarantee type assetion to the requested type
-// after custom processing.
+// after custom processing. Or the method will panic.
 func Converters(conv Converter) optFunc {
 	return func(o *options) {
 		o.converters = conv
 	}
 }
 
-// AllowNoValue allows option with no value to be saved
-// as empty line.
+// AllowNoValue allows option with no value to be saved as empty line.
 func AllowNoValue(o *options) { o.allowNoValue = true }
 
 // Strict prohibits the duplicates of options and values.

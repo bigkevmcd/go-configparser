@@ -36,7 +36,7 @@ func (s *ConfigParserSuite) TestCommentPrefixesOpt(c *C) {
 
 func (s *ConfigParserSuite) TestInlineCommentPrefixesOpt(c *C) {
 	parsed, err := configparser.ParseReaderWithOptions(
-		strings.NewReader("[section]\noption=value // this is an inline comment\n\n"),
+		strings.NewReader("[section] // this is section inline comment\noption=value // this is an inline comment\n\n"),
 		configparser.InlineCommentPrefixes(configparser.Prefixes{"//"}),
 	)
 	c.Assert(err, IsNil)
@@ -64,7 +64,7 @@ func (s *ConfigParserSuite) TestDefalutSectionOpt(c *C) {
 func (s *ConfigParserSuite) TestDelimetersOpt(c *C) {
 	parsed, err := configparser.ParseReaderWithOptions(
 		strings.NewReader("[section]\noption==test\n\n"),
-		configparser.Delimeters("=="),
+		configparser.Delimiters("=="),
 	)
 	c.Assert(err, IsNil)
 

@@ -88,8 +88,7 @@ func NewWithOptions(opts ...optFunc) *ConfigParser {
 	}
 }
 
-// NewWithDefaults allows creation of a new ConfigParser with a pre-existing
-// Dict.
+// NewWithDefaults allows creation of a new ConfigParser with a pre-existing Dict.
 func NewWithDefaults(defaults Dict) (*ConfigParser, error) {
 	p := New()
 	for key, value := range defaults {
@@ -202,13 +201,13 @@ func (p *ConfigParser) ParseReader(in io.Reader) error {
 	keyValue := regexp.MustCompile(
 		fmt.Sprintf(
 			`([^%[1]s\s][^%[1]s]*)\s*(?P<vi>[%[1]s]+)\s*(.*)$`,
-			p.opt.delimeters,
+			p.opt.delimiters,
 		),
 	)
 	keyWNoValue := regexp.MustCompile(
 		fmt.Sprintf(
 			`([^%[1]s\s][^%[1]s]*)\s*((?P<vi>[%[1]s]+)\s*(.*)$)?`,
-			p.opt.delimeters,
+			p.opt.delimiters,
 		),
 	)
 
