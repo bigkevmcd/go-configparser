@@ -7,7 +7,7 @@ import (
 )
 
 func (p *ConfigParser) isDefaultSection(section string) bool {
-	return section == defaultSectionName
+	return section == p.opt.defaultSection
 }
 
 // Defaults returns the items in the map used for default values.
@@ -83,6 +83,29 @@ func (p *ConfigParser) Options(section string) ([]string, error) {
 // Returns an error if the option does not exist either in the section or in
 // the defaults
 func (p *ConfigParser) Get(section, option string) (string, error) {
+	fn, ok := p.opt.converters["string"]
+	returnFunc := func(v string) (string, error) {
+		if ok {
+			iValue, err := fn(v)
+			if err != nil {
+				return "", err
+			}
+
+			return iValue.(string), nil
+		}
+
+		return v, nil
+	}
+
+	value, err := p.get(section, option)
+	if err != nil {
+		return "", err
+	}
+
+	return returnFunc(value)
+}
+
+func (p *ConfigParser) get(section, option string) (string, error) {
 	if !p.HasSection(section) {
 		if !p.isDefaultSection(section) {
 			return "", getNoSectionError(section)
@@ -152,42 +175,74 @@ func (p *ConfigParser) Set(section, option, value string) error {
 }
 
 func (p *ConfigParser) GetInt64(section, option string) (int64, error) {
-	result, err := p.Get(section, option)
-	if err != nil {
-		return 0, err
-	}
-	value, err := strconv.ParseInt(result, 10, 64)
+	result, err := p.get(section, option)
 	if err != nil {
 		return 0, err
 	}
 
-	return value, nil
+	fn, ok := p.opt.converters["int"]
+	if !ok {
+		value, err := strconv.ParseInt(result, 10, 64)
+		if err != nil {
+			return 0, err
+		}
+
+		return value, nil
+	}
+
+	value, err := fn(result)
+	if err != nil {
+		return 0, err
+	}
+
+	return int64(value.(int)), nil
 }
 
 func (p *ConfigParser) GetFloat64(section, option string) (float64, error) {
-	result, err := p.Get(section, option)
+	result, err := p.get(section, option)
 	if err != nil {
 		return 0, err
 	}
-	value, err := strconv.ParseFloat(result, 64)
+	fn, ok := p.opt.converters["float"]
+	if !ok {
+		value, err := strconv.ParseFloat(result, 64)
+		if err != nil {
+			return 0, err
+		}
+
+		return value, nil
+	}
+
+	value, err := fn(result)
 	if err != nil {
 		return 0, err
 	}
 
-	return value, nil
+	return value.(float64), nil
 }
 
 func (p *ConfigParser) GetBool(section, option string) (bool, error) {
-	result, err := p.Get(section, option)
+	result, err := p.get(section, option)
 	if err != nil {
 		return false, err
 	}
-	booleanValue, present := boolMapping[result]
-	if !present {
-		return false, fmt.Errorf("not a boolean: %q", result)
+
+	fn, ok := p.opt.converters["bool"]
+	if !ok {
+		booleanValue, present := boolMapping[result]
+		if !present {
+			return false, fmt.Errorf("not a boolean: %q", result)
+		}
+
+		return booleanValue, nil
 	}
 
-	return booleanValue, nil
+	value, err := fn(result)
+	if err != nil {
+		return false, err
+	}
+
+	return value.(bool), nil
 }
 
 func (p *ConfigParser) RemoveSection(section string) error {
@@ -224,4 +279,34 @@ func (p *ConfigParser) RemoveOption(section, option string) error {
 	}
 
 	return s.Remove(option)
+}
+
+func (p *ConfigParser) inOptions(key string) error {
+	opts, err := p.allOptions()
+	if err != nil {
+		return err
+	}
+
+	for _, o := range opts {
+		if key == o {
+			return fmt.Errorf("option %q error: %w", key, ErrAlreadyExist)
+		}
+	}
+
+	return nil
+}
+
+func (p *ConfigParser) allOptions() ([]string, error) {
+	sections := p.Sections()
+	options := make([]string, 0)
+	for _, s := range sections {
+		o, err := p.Options(s)
+		if err != nil {
+			return nil, err
+		}
+
+		options = append(options, o...)
+	}
+
+	return options, nil
 }

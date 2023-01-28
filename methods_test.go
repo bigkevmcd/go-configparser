@@ -190,7 +190,8 @@ func (s *ConfigParserSuite) TestItemsWithSection(c *gc.C) {
 		"TableName":       "MyCaseSensitiveTableName",
 		"max_build_time":  "200",
 		"builder_command": "%(bin_dir)s/build",
-		"log_dir":         "%(base_dir)s/logs"})
+		"log_dir":         "%(base_dir)s/logs",
+	})
 }
 
 // Items(section) should return a copy of the dict for the section
@@ -204,7 +205,8 @@ func (s *ConfigParserSuite) TestItemsWithDefaults(c *gc.C) {
 		"base_dir":        "/srv",
 		"builder_command": "%(bin_dir)s/build",
 		"log_dir":         "%(base_dir)s/logs",
-		"bin_dir":         "%(base_dir)s/bin"})
+		"bin_dir":         "%(base_dir)s/bin",
+	})
 }
 
 // GetInt64(section, option) should return the option value for the named section as an Int64 value

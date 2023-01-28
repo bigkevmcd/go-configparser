@@ -1,13 +1,13 @@
 package configparser
 
 import (
-	"github.com/bigkevmcd/go-configparser/chainmap"
-
 	"strings"
 )
 
-func (p *ConfigParser) getInterpolated(section, option string, c *chainmap.ChainMap) (string, error) {
-	val, err := p.Get(section, option)
+const maxInterpolationDepth int = 10
+
+func (p *ConfigParser) getInterpolated(section, option string, c Interpolator) (string, error) {
+	val, err := p.get(section, option)
 	if err != nil {
 		return "", err
 	}
@@ -23,8 +23,8 @@ func (p *ConfigParser) GetInterpolated(section, option string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	c := chainmap.New(chainmap.Dict(p.Defaults()), chainmap.Dict(o))
-	return p.getInterpolated(section, option, c)
+	p.opt.interpolation.Add(Dict(p.Defaults()), Dict(o))
+	return p.getInterpolated(section, option, p.opt.interpolation)
 }
 
 // GetInterpolatedWithVars returns a string value for the named option.
@@ -38,16 +38,14 @@ func (p *ConfigParser) GetInterpolatedWithVars(section, option string, v Dict) (
 	if err != nil {
 		return "", err
 	}
-	c := chainmap.New(chainmap.Dict(p.Defaults()), chainmap.Dict(o), chainmap.Dict(v))
-	return p.getInterpolated(section, option, c)
-
+	p.opt.interpolation.Add(Dict(p.Defaults()), Dict(o), Dict(v))
+	return p.getInterpolated(section, option, p.opt.interpolation)
 }
 
 // Private method which does the work of interpolating a value
 // interpolates the value using the values in the ChainMap
 // returns the interpolated string.
-func (p *ConfigParser) interpolate(value string, options *chainmap.ChainMap) string {
-
+func (p *ConfigParser) interpolate(value string, options Interpolator) string {
 	for i := 0; i < maxInterpolationDepth; i++ {
 		if strings.Contains(value, "%(") {
 			value = interpolater.ReplaceAllStringFunc(value, func(m string) string {

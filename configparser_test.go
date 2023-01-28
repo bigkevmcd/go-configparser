@@ -1,17 +1,15 @@
 package configparser_test
 
 import (
+	"io"
+	"os"
+	"path"
 	"strings"
+	"testing"
+
+	. "gopkg.in/check.v1"
 
 	"github.com/bigkevmcd/go-configparser"
-	. "gopkg.in/check.v1"
-	gc "gopkg.in/check.v1"
-
-	"io/ioutil"
-	"os"
-
-	"path"
-	"testing"
 )
 
 func Test(t *testing.T) { TestingT(t) }
@@ -74,7 +72,7 @@ func (s *ConfigParserSuite) TestSaveWithDelimiter(c *C) {
 	f, err := os.Open(tempfile)
 	c.Assert(err, IsNil)
 
-	data, err := ioutil.ReadAll(f)
+	data, err := io.ReadAll(f)
 	c.Assert(err, IsNil)
 	f.Close()
 	c.Assert(string(data), Equals, "[othersection]\nmyoption = myvalue\nnewoption = novalue\n\n[testing]\nmyoption = value\n\n")
@@ -106,45 +104,22 @@ func (s *ConfigParserSuite) TestSaveWithDelimiterAndDefaults(c *C) {
 	f, err := os.Open(tempfile)
 	c.Assert(err, IsNil)
 
-	data, err := ioutil.ReadAll(f)
+	data, err := io.ReadAll(f)
 	c.Assert(err, IsNil)
 	f.Close()
 	c.Assert(string(data), Equals, "[DEFAULT]\ntesting = value\n\n[othersection]\nmyoption = myvalue\nnewoption = novalue\n\n[testing]\nmyoption = value\n\n")
 }
 
 // ParseFromReader() parses the Config data from an io.Reader.
-func (s *ConfigParserSuite) TestParseFromReader(c *gc.C) {
+func (s *ConfigParserSuite) TestParseFromReader(c *C) {
 	parsed, err := configparser.ParseReader(strings.NewReader("[DEFAULT]\ntesting = value\n\n[othersection]\nmyoption = myvalue\nnewoption = novalue\nfinal = foo[bar]\n\n[testing]\nmyoption = value\nemptyoption\n\n"))
-	c.Assert(err, gc.IsNil)
+	c.Assert(err, IsNil)
 
 	result, err := parsed.Items("othersection")
-	c.Assert(err, gc.IsNil)
-	c.Assert(result, gc.DeepEquals, configparser.Dict{"myoption": "myvalue", "newoption": "novalue", "final": "foo[bar]"})
+	c.Assert(err, IsNil)
+	c.Assert(result, DeepEquals, configparser.Dict{"myoption": "myvalue", "newoption": "novalue", "final": "foo[bar]"})
 }
 
-// If AllowNoValue is set to true, parser should recognize options without values.
-func (s *ConfigParserSuite) TestParseReaderWithOptionsWNoValue(c *gc.C) {
-	parsed, err := configparser.ParseReaderWithOptions(
-		strings.NewReader("[empty]\noption\n\n"), configparser.AllowNoValue,
-	)
-	c.Assert(err, gc.IsNil)
-
-	ok, err := parsed.HasOption("empty", "option")
-	c.Assert(err, gc.IsNil)
-	c.Assert(ok, Equals, true)
-}
-
-func assertSuccessful(c *gc.C, err error) {
-	c.Assert(err, gc.IsNil)
-}
-
-func (s *ConfigParserSuite) TestParseWithOptions(c *gc.C) {
-	parsed, err := configparser.ParseWithOptions(
-		"testdata/example.cfg", configparser.AllowNoValue,
-	)
-	c.Assert(err, gc.IsNil)
-
-	ok, err := parsed.HasOption("empty", "foo")
-	c.Assert(err, gc.IsNil)
-	c.Assert(ok, Equals, true)
+func assertSuccessful(c *C, err error) {
+	c.Assert(err, IsNil)
 }

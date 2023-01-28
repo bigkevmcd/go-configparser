@@ -3,6 +3,7 @@ package configparser
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -12,17 +13,12 @@ import (
 	"unicode"
 )
 
-const (
-	defaultSectionName        = "DEFAULT"
-	maxInterpolationDepth int = 10
-)
-
 var (
 	sectionHeader = regexp.MustCompile(`^\[([^]]+)\]$`)
-	keyValue      = regexp.MustCompile(`([^:=\s][^:=]*)\s*(?P<vi>[:=])\s*(.*)$`)
-	keyWNoValue   = regexp.MustCompile(`([^:=\s][^:=]*)\s*((?P<vi>[:=])\s*(.*)$)?`)
 	interpolater  = regexp.MustCompile(`%\(([^)]*)\)s`)
 )
+
+var ErrAlreadyExist = errors.New("already exist")
 
 var boolMapping = map[string]bool{
 	"1":     true,
@@ -74,20 +70,20 @@ func New() *ConfigParser {
 	return &ConfigParser{
 		config:   make(Config),
 		defaults: newSection(defaultSectionName),
-		opt:      &options{},
+		opt:      defaultOptions(),
 	}
 }
 
 // NewWithOptions creates a new ConfigParser with options.
-func NewWithOptions(opts ...OptFunc) *ConfigParser {
-	opt := &options{}
+func NewWithOptions(opts ...optFunc) *ConfigParser {
+	opt := defaultOptions()
 	for _, fn := range opts {
 		fn(opt)
 	}
 
 	return &ConfigParser{
 		config:   make(Config),
-		defaults: newSection(defaultSectionName),
+		defaults: newSection(opt.defaultSection),
 		opt:      opt,
 	}
 }
@@ -123,7 +119,7 @@ func ParseReader(in io.Reader) (*ConfigParser, error) {
 }
 
 // ParseReaderWithOptions parses a ConfigParser from the provided input with given options.
-func ParseReaderWithOptions(in io.Reader, opts ...OptFunc) (*ConfigParser, error) {
+func ParseReaderWithOptions(in io.Reader, opts ...optFunc) (*ConfigParser, error) {
 	p := NewWithOptions(opts...)
 	err := p.ParseReader(in)
 
@@ -145,7 +141,7 @@ func Parse(filename string) (*ConfigParser, error) {
 }
 
 // ParseWithOptions takes a filename and parses it into a ConfigParser value with given options.
-func ParseWithOptions(filename string, opts ...OptFunc) (*ConfigParser, error) {
+func ParseWithOptions(filename string, opts ...optFunc) (*ConfigParser, error) {
 	p := NewWithOptions(opts...)
 	data, err := os.ReadFile(filename)
 	if err != nil {
@@ -201,10 +197,22 @@ func (p *ConfigParser) SaveWithDelimiter(filename, delimiter string) error {
 func (p *ConfigParser) ParseReader(in io.Reader) error {
 	reader := bufio.NewReader(in)
 	var lineNo int
-	var err error
 	var curSect *Section
 
-	for err == nil {
+	keyValue := regexp.MustCompile(
+		fmt.Sprintf(
+			`([^%[1]s\s][^%[1]s]*)\s*(?P<vi>[%[1]s]+)\s*(.*)$`,
+			p.opt.delimeters,
+		),
+	)
+	keyWNoValue := regexp.MustCompile(
+		fmt.Sprintf(
+			`([^%[1]s\s][^%[1]s]*)\s*((?P<vi>[%[1]s]+)\s*(.*)$)?`,
+			p.opt.delimeters,
+		),
+	)
+
+	for {
 		l, _, err := reader.ReadLine()
 		if err != nil {
 			break
@@ -216,30 +224,45 @@ func (p *ConfigParser) ParseReader(in io.Reader) error {
 		line := strings.TrimFunc(string(l), unicode.IsSpace) // ensures sectionHeader regex will match
 
 		// Skip comment lines and empty lines
-		if strings.HasPrefix(line, "#") || line == "" {
+		if p.opt.commentPrefixes.In(line) || line == "" {
 			continue
 		}
 
 		if match := sectionHeader.FindStringSubmatch(line); len(match) > 0 {
 			section := match[1]
-			if section == defaultSectionName {
+			if section == p.opt.defaultSection {
 				curSect = p.defaults
 			} else if _, present := p.config[section]; !present {
 				curSect = newSection(section)
 				p.config[section] = curSect
+			} else if p.opt.strict {
+				return fmt.Errorf("section %q error: %w", section, ErrAlreadyExist)
 			}
 		} else if match = keyValue.FindStringSubmatch(line); len(match) > 0 {
 			if curSect == nil {
 				return fmt.Errorf("missing section header: %d %s", lineNo, line)
 			}
 			key := strings.TrimSpace(match[1])
-			value := match[3]
+			if p.opt.strict {
+				if err := p.inOptions(key); err != nil {
+					return err
+				}
+			}
+
+			value := p.opt.inlineCommentPrefixes.Split(match[3])
 			if err := curSect.Add(key, value); err != nil {
 				return fmt.Errorf("failed to add %q = %q: %w", key, value, err)
 			}
-		} else if match = keyWNoValue.FindStringSubmatch(line); len(match) > 0 && p.opt.allowNoValue && curSect != nil {
+		} else if match = keyWNoValue.FindStringSubmatch(line); len(match) > 0 &&
+			p.opt.allowNoValue && curSect != nil {
 			key := strings.TrimSpace(match[1])
-			value := match[4]
+			if p.opt.strict {
+				if err := p.inOptions(key); err != nil {
+					return err
+				}
+			}
+
+			value := p.opt.inlineCommentPrefixes.Split(match[4])
 			if err := curSect.Add(key, value); err != nil {
 				return fmt.Errorf("failed to add %q = %q: %w", key, value, err)
 			}
