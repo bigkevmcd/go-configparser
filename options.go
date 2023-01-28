@@ -41,8 +41,8 @@ type ConvertFunc func(string) (any, error)
 // Prefixes stores available prefixes for comments.
 type Prefixes []string
 
-// In checks if str starts with any of the prefixes.
-func (pr Prefixes) In(str string) bool {
+// AtFirst checks if str starts with any of the prefixes.
+func (pr Prefixes) AtFirst(str string) bool {
 	for _, p := range pr {
 		if strings.HasPrefix(str, p) {
 			return true
@@ -65,7 +65,7 @@ func (pr Prefixes) Split(str string) string {
 }
 
 // Interpolator defines interpolation instance.
-// For more info, check chainMap realisation.
+// For more details, check [chainmap.ChainMap] realisation.
 type Interpolator interface {
 	Add(...chainmap.Dict)
 	Len() int
