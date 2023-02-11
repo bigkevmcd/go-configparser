@@ -30,10 +30,10 @@ type Converter map[int]ConvertFunc
 
 // Predefined types for Converter.
 const (
-	String = iota
-	Int
-	Float
-	Bool
+	StringConv = iota
+	IntConv
+	FloatConv
+	BoolConv
 )
 
 // ConvertFunc is a custom datatype converter.
@@ -81,10 +81,10 @@ func defaultOptions() *options {
 		delimiters:      ":=",
 		commentPrefixes: Prefixes{"#", ";"},
 		converters: Converter{
-			String: defaultGet,
-			Int:    defaultGetInt64,
-			Float:  defaultGetFloat64,
-			Bool:   defaultGetBool,
+			StringConv: defaultGet,
+			IntConv:    defaultGetInt64,
+			FloatConv:  defaultGetFloat64,
+			BoolConv:   defaultGetBool,
 		},
 	}
 }

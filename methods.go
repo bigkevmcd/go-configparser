@@ -88,7 +88,7 @@ func (p *ConfigParser) Get(section, option string) (string, error) {
 		return "", err
 	}
 
-	value, err := p.opt.converters[String](result)
+	value, err := p.opt.converters[StringConv](result)
 	if err != nil {
 		return "", err
 	}
@@ -176,7 +176,7 @@ func (p *ConfigParser) GetInt64(section, option string) (int64, error) {
 		return 0, err
 	}
 
-	value, err := p.opt.converters[Int](result)
+	value, err := p.opt.converters[IntConv](result)
 	if err != nil {
 		return 0, err
 	}
@@ -195,7 +195,7 @@ func (p *ConfigParser) GetFloat64(section, option string) (float64, error) {
 		return 0, err
 	}
 
-	value, err := p.opt.converters[Float](result)
+	value, err := p.opt.converters[FloatConv](result)
 	if err != nil {
 		return 0, err
 	}
@@ -214,7 +214,7 @@ func (p *ConfigParser) GetBool(section, option string) (bool, error) {
 		return false, err
 	}
 
-	value, err := p.opt.converters[Bool](result)
+	value, err := p.opt.converters[BoolConv](result)
 	if err != nil {
 		return false, err
 	}

@@ -100,10 +100,10 @@ func (s *ConfigParserSuite) TestConvertersOpt(c *C) {
 	}
 
 	conv := configparser.Converter{
-		configparser.Int:    intConv,
-		configparser.Float:  floatConv,
-		configparser.String: stringConv,
-		configparser.Bool:   boolConv,
+		configparser.IntConv:    intConv,
+		configparser.FloatConv:  floatConv,
+		configparser.StringConv: stringConv,
+		configparser.BoolConv:   boolConv,
 	}
 
 	parsed, err := configparser.ParseReaderWithOptions(

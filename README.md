@@ -122,10 +122,10 @@ func defaultOptions() *options {
 		delimiters:      ":=",
 		commentPrefixes: Prefixes{"#", ";"},
 		converters: Converter{
-			String: defaultGet,
-			Int:    defaultGetInt64,
-			Float:  defaultGetFloat64,
-			Bool:   defaultGetBool,
+			StringConv: defaultGet,
+			IntConv:    defaultGetInt64,
+			FloatConv:  defaultGetFloat64,
+			BoolConv:   defaultGetBool,
 		},
 	}
 }
