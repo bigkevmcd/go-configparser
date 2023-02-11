@@ -79,9 +79,9 @@ func (p *ConfigParser) Options(section string) ([]string, error) {
 
 // Get returns string value for the named option.
 //
-// Returns an error if a section does not exist
+// Returns an error if a section does not exist.
 // Returns an error if the option does not exist either in the section or in
-// the defaults
+// the defaults.
 func (p *ConfigParser) Get(section, option string) (string, error) {
 	fn, ok := p.opt.converters["string"]
 	returnFunc := func(v string) (string, error) {
@@ -174,6 +174,11 @@ func (p *ConfigParser) Set(section, option, value string) error {
 	return setSection.Add(option, value)
 }
 
+// GetInt64 returns int64 representation of the named option.
+//
+// Returns an error if a section does not exist.
+// Returns an error if the option does not exist either in the section or in
+// the defaults.
 func (p *ConfigParser) GetInt64(section, option string) (int64, error) {
 	result, err := p.get(section, option)
 	if err != nil {
@@ -198,6 +203,11 @@ func (p *ConfigParser) GetInt64(section, option string) (int64, error) {
 	return int64(value.(int)), nil
 }
 
+// GetFloat64 returns float64 representation of the named option.
+//
+// Returns an error if a section does not exist.
+// Returns an error if the option does not exist either in the section or in
+// the defaults.
 func (p *ConfigParser) GetFloat64(section, option string) (float64, error) {
 	result, err := p.get(section, option)
 	if err != nil {
@@ -221,6 +231,11 @@ func (p *ConfigParser) GetFloat64(section, option string) (float64, error) {
 	return value.(float64), nil
 }
 
+// GetBool returns bool representation of the named option.
+//
+// Returns an error if a section does not exist.
+// Returns an error if the option does not exist either in the section or in
+// the defaults.
 func (p *ConfigParser) GetBool(section, option string) (bool, error) {
 	result, err := p.get(section, option)
 	if err != nil {
@@ -245,6 +260,7 @@ func (p *ConfigParser) GetBool(section, option string) (bool, error) {
 	return value.(bool), nil
 }
 
+// RemoveSection removes given section from the ConfigParser.
 func (p *ConfigParser) RemoveSection(section string) error {
 	if !p.HasSection(section) {
 		return getNoSectionError(section)
@@ -254,6 +270,7 @@ func (p *ConfigParser) RemoveSection(section string) error {
 	return nil
 }
 
+// HasOption checks if section contains option.
 func (p *ConfigParser) HasOption(section, option string) (bool, error) {
 	var s *Section
 	if p.isDefaultSection(section) {
@@ -268,6 +285,7 @@ func (p *ConfigParser) HasOption(section, option string) (bool, error) {
 	return err == nil, nil
 }
 
+// RemoveOption removes option from the section.
 func (p *ConfigParser) RemoveOption(section, option string) error {
 	var s *Section
 	if p.isDefaultSection(section) {
