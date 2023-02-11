@@ -33,7 +33,15 @@ type options struct {
 //
 // The caller should guarantee type assertion to the requested type
 // after custom processing!
-type Converter map[string]ConvertFunc
+type Converter map[int]ConvertFunc
+
+// Predefined types for Converter.
+const (
+	String = iota
+	Int
+	Float
+	Bool
+)
 
 // ConvertFunc is a custom datatype converter.
 type ConvertFunc func(string) (any, error)
@@ -79,6 +87,12 @@ func defaultOptions() *options {
 		defaultSection:  defaultSectionName,
 		delimiters:      ":=",
 		commentPrefixes: Prefixes{"#", ";"},
+		converters: Converter{
+			String: defaultGet,
+			Int:    defaultGetInt64,
+			Float:  defaultGetFloat64,
+			Bool:   defaultGetBool,
+		},
 	}
 }
 

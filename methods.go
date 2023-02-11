@@ -83,26 +83,17 @@ func (p *ConfigParser) Options(section string) ([]string, error) {
 // Returns an error if the option does not exist either in the section or in
 // the defaults.
 func (p *ConfigParser) Get(section, option string) (string, error) {
-	fn, ok := p.opt.converters["string"]
-	returnFunc := func(v string) (string, error) {
-		if ok {
-			iValue, err := fn(v)
-			if err != nil {
-				return "", err
-			}
-
-			return iValue.(string), nil
-		}
-
-		return v, nil
-	}
-
-	value, err := p.get(section, option)
+	result, err := p.get(section, option)
 	if err != nil {
 		return "", err
 	}
 
-	return returnFunc(value)
+	value, err := p.opt.converters[String](result)
+	if err != nil {
+		return "", err
+	}
+
+	return value.(string), nil
 }
 
 func (p *ConfigParser) get(section, option string) (string, error) {
@@ -185,22 +176,12 @@ func (p *ConfigParser) GetInt64(section, option string) (int64, error) {
 		return 0, err
 	}
 
-	fn, ok := p.opt.converters["int"]
-	if !ok {
-		value, err := strconv.ParseInt(result, 10, 64)
-		if err != nil {
-			return 0, err
-		}
-
-		return value, nil
-	}
-
-	value, err := fn(result)
+	value, err := p.opt.converters[Int](result)
 	if err != nil {
 		return 0, err
 	}
 
-	return int64(value.(int)), nil
+	return value.(int64), nil
 }
 
 // GetFloat64 returns float64 representation of the named option.
@@ -213,17 +194,8 @@ func (p *ConfigParser) GetFloat64(section, option string) (float64, error) {
 	if err != nil {
 		return 0, err
 	}
-	fn, ok := p.opt.converters["float"]
-	if !ok {
-		value, err := strconv.ParseFloat(result, 64)
-		if err != nil {
-			return 0, err
-		}
 
-		return value, nil
-	}
-
-	value, err := fn(result)
+	value, err := p.opt.converters[Float](result)
 	if err != nil {
 		return 0, err
 	}
@@ -242,17 +214,7 @@ func (p *ConfigParser) GetBool(section, option string) (bool, error) {
 		return false, err
 	}
 
-	fn, ok := p.opt.converters["bool"]
-	if !ok {
-		booleanValue, present := boolMapping[result]
-		if !present {
-			return false, fmt.Errorf("not a boolean: %q", result)
-		}
-
-		return booleanValue, nil
-	}
-
-	value, err := fn(result)
+	value, err := p.opt.converters[Bool](result)
 	if err != nil {
 		return false, err
 	}
@@ -327,4 +289,23 @@ func (p *ConfigParser) allOptions() ([]string, error) {
 	}
 
 	return options, nil
+}
+
+func defaultGet(value string) (any, error) { return value, nil }
+
+func defaultGetInt64(value string) (any, error) {
+	return strconv.ParseInt(value, 10, 64)
+}
+
+func defaultGetFloat64(value string) (any, error) {
+	return strconv.ParseFloat(value, 64)
+}
+
+func defaultGetBool(value string) (any, error) {
+	booleanValue, present := boolMapping[value]
+	if !present {
+		return false, fmt.Errorf("not a boolean: %q", value)
+	}
+
+	return booleanValue, nil
 }

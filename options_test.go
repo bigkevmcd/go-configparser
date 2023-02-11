@@ -80,7 +80,7 @@ func (s *ConfigParserSuite) TestConvertersOpt(c *C) {
 			return -1, err
 		}
 
-		return i + 1, err
+		return int64(i + 1), err
 	}
 
 	floatConv := func(s string) (any, error) {
@@ -100,10 +100,10 @@ func (s *ConfigParserSuite) TestConvertersOpt(c *C) {
 	}
 
 	conv := configparser.Converter{
-		"int":    intConv,
-		"float":  floatConv,
-		"string": stringConv,
-		"bool":   boolConv,
+		configparser.Int:    intConv,
+		configparser.Float:  floatConv,
+		configparser.String: stringConv,
+		configparser.Bool:   boolConv,
 	}
 
 	parsed, err := configparser.ParseReaderWithOptions(
