@@ -24,13 +24,6 @@ type options struct {
 }
 
 // Converter contains custom convert functions for available types.
-//
-// List of types:
-//   - int -> int64
-//   - float -> float64
-//   - string
-//   - bool
-//
 // The caller should guarantee type assertion to the requested type
 // after custom processing!
 type Converter map[int]ConvertFunc
