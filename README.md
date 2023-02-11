@@ -53,3 +53,80 @@ It's also possible to override the values to use when interpolating values by pr
 ```
 
 Will get ```testing/whatever``` as the value
+
+## Options
+The ConfigParser supports almost all custom options available in the Python version.
+
+* Delimiters - allows to set custom **key-value** pair delimiters.
+* CommentPrefixes - allows to set custom comment line prefix. If line starts with one of the given `Prefixes` it will be passed during parsing.
+* InlineCommentPrefixes - allows to set custom inline comment delimiter. This option checks if the line contains any of the given `Prefixes` and if so, splits the string by the prefix and returns the 0 index of the slice.
+* Strict - if set to `true`, parser will return new wrapped `ErrAlreadyExist` for duplicates of *sections* or *options* in one source.
+* Interpolation - allows to set custom behaviour for values interpolation. Interface was added, which defaults to `chainmap.ChainMap` instance.
+```go
+type Interpolator interface {
+	Add(...chainmap.Dict)
+	Len() int
+	Get(string) string
+}
+```
+* Converters - allows to set custom values parsers.
+```go
+type ConvertFunc func(string) (any, error)
+```
+`ConvertFunc` can modify requested value if needed e.g.,
+```go
+package main
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/bigkevmcd/go-configparser"
+)
+
+func main() {
+	stringConv := func(s string) (any, error) {
+		return s + "_updated", nil
+	}
+
+	conv := configparser.Converter{
+		configparser.String: stringConv,
+	}
+
+	p, err := configparser.ParseReaderWithOptions(
+		strings.NewReader("[section]\noption=value\n\n"),
+		configparser.Converters(conv),
+	)
+	// handle err
+
+	v, err := p.Get("section", "option")
+	// handle err
+
+	fmt.Println(v == "value_updated") // true
+}
+```
+Those functions triggered inside `ConfigParser.Get*` methods if presented and wraps the return value. 
+> NOTE: Since `ConvertFunc` returns `any`, the caller should guarantee type assertion to the requested type after custom processing!
+```go
+type Converter map[string]ConvertFunc
+```
+`Converter` is a `map` type, which supports *int* (for `int64`), *string*, *bool*, *float* (for `float64`) keys.
+
+---
+Default options, which are always preset:
+```go
+func defaultOptions() *options {
+	return &options{
+		interpolation:   chainmap.New(),
+		defaultSection:  defaultSectionName,
+		delimiters:      ":=",
+		commentPrefixes: Prefixes{"#", ";"},
+		converters: Converter{
+			String: defaultGet,
+			Int:    defaultGetInt64,
+			Float:  defaultGetFloat64,
+			Bool:   defaultGetBool,
+		},
+	}
+}
+```
