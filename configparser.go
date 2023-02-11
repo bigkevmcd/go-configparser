@@ -223,7 +223,7 @@ func (p *ConfigParser) ParseReader(in io.Reader) error {
 		line := strings.TrimFunc(string(l), unicode.IsSpace) // ensures sectionHeader regex will match
 
 		// Skip comment lines and empty lines
-		if p.opt.commentPrefixes.AtFirst(line) || line == "" {
+		if p.opt.commentPrefixes.HasPrefix(line) || line == "" {
 			continue
 		}
 

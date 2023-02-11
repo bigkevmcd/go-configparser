@@ -41,8 +41,8 @@ type ConvertFunc func(string) (any, error)
 // Prefixes stores available prefixes for comments.
 type Prefixes []string
 
-// AtFirst checks if str starts with any of the prefixes.
-func (pr Prefixes) AtFirst(str string) bool {
+// HasPrefix checks if str starts with any of the prefixes.
+func (pr Prefixes) HasPrefix(str string) bool {
 	for _, p := range pr {
 		if strings.HasPrefix(str, p) {
 			return true
