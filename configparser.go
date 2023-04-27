@@ -233,7 +233,7 @@ func (p *ConfigParser) ParseReader(in io.Reader) error {
 		// Ensures regex will match and get copy of the line without space characters.
 		line := strings.TrimFunc(string(l), unicode.IsSpace)
 
-		// Skip comment lines and empty lines if those are not allowed in values.
+		// Skip comment lines.
 		if p.opt.commentPrefixes.HasPrefix(line) {
 			continue
 		}
