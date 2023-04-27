@@ -239,6 +239,21 @@ option = this value will have
 	result, err := parsed.Items("DEFAULT")
 	c.Assert(err, IsNil)
 	c.Assert(result, DeepEquals, configparser.Dict{
-		"option": "this value will have\n\nits multiline",
+}
+
+// TestMultilinePrefixes tests custom multiline prefixes.
+func (s *ConfigParserSuite) TestMultilinePrefixes(c *C) {
+	parsed, err := configparser.ParseReaderWithOptions(
+		strings.NewReader(`[DEFAULT]
+option = this value will have
+		its multiline
+`),
+		configparser.MultilinePrefixes(configparser.Prefixes{"\t\t"}),
+	)
+	c.Assert(err, IsNil)
+	result, err := parsed.Items("DEFAULT")
+	c.Assert(err, IsNil)
+	c.Assert(result, DeepEquals, configparser.Dict{
+		"option": "this value will have\nits multiline",
 	})
 }
