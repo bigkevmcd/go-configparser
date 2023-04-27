@@ -273,7 +273,10 @@ func (p *ConfigParser) inOptions(key string) error {
 
 	for _, o := range opts {
 		if key == o {
-			return fmt.Errorf("option %q error: %w", key, ErrAlreadyExist)
+			return fmt.Errorf(
+				"option %q already exists and strict flag was set",
+				key,
+			)
 		}
 	}
 

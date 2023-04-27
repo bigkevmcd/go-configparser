@@ -18,8 +18,6 @@ var (
 	interpolater  = regexp.MustCompile(`%\(([^)]*)\)s`)
 )
 
-var ErrAlreadyExist = errors.New("already exist")
-
 var boolMapping = map[string]bool{
 	"1":     true,
 	"true":  true,
@@ -255,7 +253,7 @@ func (p *ConfigParser) ParseReader(in io.Reader) error {
 			} else {
 				// If key was defined, but current line does not start with any of the
 				// multiline prefixes or it is an empty line which is not allowed within values,
-				//  then it counts as the value parsing is finished and it can be added
+				// then it counts as the value parsing is finished and it can be added
 				// to the current section.
 				if err := curSect.Add(key, value); err != nil {
 					return fmt.Errorf("failed to add %q = %q: %w", key, value, err)
@@ -279,7 +277,9 @@ func (p *ConfigParser) ParseReader(in io.Reader) error {
 				curSect = newSection(section)
 				p.config[section] = curSect
 			} else if p.opt.strict {
-				return fmt.Errorf("section %q error: %w", section, ErrAlreadyExist)
+				return fmt.Errorf(
+					"section %q already exists and strict flag was set", section,
+				)
 			}
 
 			// Since section was defined on current line, may continue.

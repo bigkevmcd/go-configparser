@@ -199,7 +199,7 @@ func (s *ConfigParserSuite) TestStrictOptDuplicateSection(c *C) {
 	)
 
 	c.Assert(err, NotNil)
-	c.Assert(err.Error(), Equals, "section \"dubl\" error: already exist")
+	c.Assert(err.Error(), Equals, "section \"dubl\" already exists and strict flag was set")
 }
 
 // TestStrictOptDuplicateValue tests strict option with value duplicate.
@@ -210,7 +210,7 @@ func (s *ConfigParserSuite) TestStrictOptDuplicateValue(c *C) {
 	)
 
 	c.Assert(err, NotNil)
-	c.Assert(err.Error(), Equals, "option \"dubl\" error: already exist")
+	c.Assert(err.Error(), Equals, "option \"dubl\" already exists and strict flag was set")
 }
 
 // TestStrictOptDuplicateEmptyValue tests strict option with empty value duplicate.
@@ -222,7 +222,7 @@ func (s *ConfigParserSuite) TestStrictOptDuplicateEmptyValue(c *C) {
 	)
 
 	c.Assert(err, NotNil)
-	c.Assert(err.Error(), Equals, "option \"dubl\" error: already exist")
+	c.Assert(err.Error(), Equals, "option \"dubl\" already exists and strict flag was set")
 }
 
 // TestAllowEmptyLines tests empty lines as part of the value.
