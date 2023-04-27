@@ -232,6 +232,9 @@ func (s *ConfigParserSuite) TestAllowEmptyLines(c *C) {
 option = this value will have
 
  its multiline
+
+option2 = 
+ this is also the option
 `),
 		configparser.AllowEmptyLines,
 	)
@@ -239,6 +242,9 @@ option = this value will have
 	result, err := parsed.Items("DEFAULT")
 	c.Assert(err, IsNil)
 	c.Assert(result, DeepEquals, configparser.Dict{
+		"option":  "this value will have\n\nits multiline",
+		"option2": "this is also the option",
+	})
 }
 
 // TestMultilinePrefixes tests custom multiline prefixes.
