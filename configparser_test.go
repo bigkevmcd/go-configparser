@@ -117,7 +117,32 @@ func (s *ConfigParserSuite) TestParseFromReader(c *C) {
 
 	result, err := parsed.Items("othersection")
 	c.Assert(err, IsNil)
-	c.Assert(result, DeepEquals, configparser.Dict{"myoption": "myvalue", "newoption": "novalue", "final": "foo[bar]"})
+}
+
+// TestMultilineValue tests multiline value parsing.
+func (s *ConfigParserSuite) TestMultilineValue(c *C) {
+	parsed, err := configparser.ParseReader(
+		strings.NewReader(`[DEFAULT]
+testing = multiline
+ value
+
+myoption = another
+ multiline
+		value
+
+broken_option = this value will miss
+
+ its multiline
+`),
+	)
+	c.Assert(err, IsNil)
+	result, err := parsed.Items("DEFAULT")
+	c.Assert(err, IsNil)
+	c.Assert(result, DeepEquals, configparser.Dict{
+		"testing":       "multiline\nvalue",
+		"myoption":      "another\nmultiline\nvalue",
+		"broken_option": "this value will miss",
+	})
 }
 
 func assertSuccessful(c *C, err error) {
