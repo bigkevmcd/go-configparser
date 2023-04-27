@@ -200,3 +200,16 @@ func (s *ConfigParserSuite) TestStrictOptDuplicateOption(c *C) {
 	c.Assert(err, NotNil)
 	c.Assert(err.Error(), Equals, "option \"dubl\" error: already exist")
 }
+
+// TestStrictOptDuplicateEmptyValue tests strict option with empty value duplicate.
+func (s *ConfigParserSuite) TestStrictOptDuplicateEmptyValue(c *C) {
+	_, err := configparser.ParseReaderWithOptions(
+		strings.NewReader("[section1]\ndubl\n\n[section2]\ndubl\n\n"),
+		configparser.Strict,
+		configparser.AllowNoValue,
+	)
+
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "option \"dubl\" error: already exist")
+}
+
