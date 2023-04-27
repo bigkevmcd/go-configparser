@@ -213,3 +213,20 @@ func (s *ConfigParserSuite) TestStrictOptDuplicateEmptyValue(c *C) {
 	c.Assert(err.Error(), Equals, "option \"dubl\" error: already exist")
 }
 
+// TestAllowEmptyLines tests empty lines as part of the value.
+func (s *ConfigParserSuite) TestAllowEmptyLines(c *C) {
+	parsed, err := configparser.ParseReaderWithOptions(
+		strings.NewReader(`[DEFAULT]
+option = this value will have
+
+ its multiline
+`),
+		configparser.AllowEmptyLines,
+	)
+	c.Assert(err, IsNil)
+	result, err := parsed.Items("DEFAULT")
+	c.Assert(err, IsNil)
+	c.Assert(result, DeepEquals, configparser.Dict{
+		"option": "this value will have\n\nits multiline",
+	})
+}
