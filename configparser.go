@@ -197,6 +197,7 @@ func (p *ConfigParser) ParseReader(in io.Reader) error {
 	reader := bufio.NewReader(in)
 	var lineNo int
 	var curSect *Section
+	var key, value string
 
 	keyValue := regexp.MustCompile(
 		fmt.Sprintf(
@@ -214,16 +215,59 @@ func (p *ConfigParser) ParseReader(in io.Reader) error {
 	for {
 		l, _, err := reader.ReadLine()
 		if err != nil {
-			break
+			// If error is end of file, then current key should be checked before return.
+			if errors.Is(err, io.EOF) {
+				if key != "" {
+					if err := curSect.Add(key, value); err != nil {
+						return fmt.Errorf("failed to add %q = %q: %w", key, value, err)
+					}
+				}
+
+				return nil
+			}
+
+			return err
 		}
 		lineNo++
-		if len(l) == 0 {
+
+		// Ensures regex will match and get copy of the line without space characters.
+		line := strings.TrimFunc(string(l), unicode.IsSpace)
+
+		// Skip comment lines and empty lines if those are not allowed in values.
+		if p.opt.commentPrefixes.HasPrefix(line) {
 			continue
 		}
-		line := strings.TrimFunc(string(l), unicode.IsSpace) // ensures sectionHeader regex will match
 
-		// Skip comment lines and empty lines
-		if p.opt.commentPrefixes.HasPrefix(line) || line == "" {
+		// Check if key-value pair is currently in parsing process.
+		if key != "" {
+			if p.opt.multilinePrefixes.HasPrefix(string(l)) ||
+				(line == "" && p.opt.emptyLines) {
+				// If current key was defined and line starts with one of the
+				// multiline prefixes or it is an empty string which is allowed within values,
+				// then adding this line to the value.
+				if curSect == nil {
+					return fmt.Errorf("missing section header: %d %s", lineNo, line)
+				}
+
+				value += "\n" + p.opt.inlineCommentPrefixes.Split(line)
+				// If current line is added as a value part, may continue.
+				continue
+			} else {
+				// If key was defined, but current line does not start with any of the
+				// multiline prefixes or it is an empty line which is not allowed within values,
+				//  then it counts as the value parsing is finished and it can be added
+				// to the current section.
+				if err := curSect.Add(key, value); err != nil {
+					return fmt.Errorf("failed to add %q = %q: %w", key, value, err)
+				}
+
+				// Drop key-value pair to empty strings.
+				key, value = "", ""
+			}
+		}
+
+		// If key was not defined and current line is empty it can be skipped.
+		if line == "" {
 			continue
 		}
 
@@ -237,36 +281,36 @@ func (p *ConfigParser) ParseReader(in io.Reader) error {
 			} else if p.opt.strict {
 				return fmt.Errorf("section %q error: %w", section, ErrAlreadyExist)
 			}
-		} else if match = keyValue.FindStringSubmatch(line); len(match) > 0 {
+
+			// Since section was defined on current line, may continue.
+			continue
+		}
+
+		if match := keyValue.FindStringSubmatch(line); len(match) > 0 {
 			if curSect == nil {
 				return fmt.Errorf("missing section header: %d %s", lineNo, line)
 			}
-			key := strings.TrimSpace(match[1])
+			key = strings.TrimSpace(match[1])
 			if p.opt.strict {
 				if err := p.inOptions(key); err != nil {
 					return err
 				}
 			}
 
-			value := p.opt.inlineCommentPrefixes.Split(match[3])
-			if err := curSect.Add(key, value); err != nil {
-				return fmt.Errorf("failed to add %q = %q: %w", key, value, err)
-			}
+			value = p.opt.inlineCommentPrefixes.Split(match[3])
 		} else if match = keyWNoValue.FindStringSubmatch(line); len(match) > 0 &&
-			p.opt.allowNoValue && curSect != nil {
-			key := strings.TrimSpace(match[1])
+			p.opt.allowNoValue {
+			if curSect == nil {
+				return fmt.Errorf("missing section header: %d %s", lineNo, line)
+			}
+			key = strings.TrimSpace(match[1])
 			if p.opt.strict {
 				if err := p.inOptions(key); err != nil {
 					return err
 				}
 			}
 
-			value := p.opt.inlineCommentPrefixes.Split(match[4])
-			if err := curSect.Add(key, value); err != nil {
-				return fmt.Errorf("failed to add %q = %q: %w", key, value, err)
-			}
+			value = p.opt.inlineCommentPrefixes.Split(match[4])
 		}
 	}
-
-	return nil
 }
