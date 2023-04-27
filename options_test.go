@@ -51,6 +51,7 @@ func (s *ConfigParserSuite) TestInterpolationOpt(c *C) {
 	c.Assert(v, Equals, "/new/home/something")
 }
 
+// TestCommentPrefixesOpt tests custom comment prefixes.
 func (s *ConfigParserSuite) TestCommentPrefixesOpt(c *C) {
 	parsed, err := configparser.ParseReaderWithOptions(
 		strings.NewReader("[section]\n// this is a comment\noption=value\n\n"),
@@ -63,9 +64,13 @@ func (s *ConfigParserSuite) TestCommentPrefixesOpt(c *C) {
 	c.Assert(len(opt), Equals, 1)
 }
 
+// TestInlineCommentPrefixesOpt tests custom inline comment prefixes.
 func (s *ConfigParserSuite) TestInlineCommentPrefixesOpt(c *C) {
 	parsed, err := configparser.ParseReaderWithOptions(
-		strings.NewReader("[section] // this is section inline comment\noption=value // this is an inline comment\n\n"),
+		strings.NewReader(`[section] // this is section inline comment
+option=value // this is an inline comment
+
+`),
 		configparser.InlineCommentPrefixes(configparser.Prefixes{"//"}),
 	)
 	c.Assert(err, IsNil)
@@ -75,6 +80,7 @@ func (s *ConfigParserSuite) TestInlineCommentPrefixesOpt(c *C) {
 	c.Assert(v, Equals, "value")
 }
 
+// TestDefalutSectionOpt tests custom default section name.
 func (s *ConfigParserSuite) TestDefalutSectionOpt(c *C) {
 	parsed, err := configparser.ParseReaderWithOptions(
 		strings.NewReader("[NEW DEFAULT]\noption=value\n\n"),
@@ -90,6 +96,7 @@ func (s *ConfigParserSuite) TestDefalutSectionOpt(c *C) {
 	c.Assert(v, Equals, "value")
 }
 
+// TestDelimetersOpt tests custom key-value pair delimeter.
 func (s *ConfigParserSuite) TestDelimetersOpt(c *C) {
 	parsed, err := configparser.ParseReaderWithOptions(
 		strings.NewReader("[section]\noption==test\n\n"),
@@ -102,6 +109,7 @@ func (s *ConfigParserSuite) TestDelimetersOpt(c *C) {
 	c.Assert(v, Equals, "test")
 }
 
+// TestConvertersOpt tests custom value converters.
 func (s *ConfigParserSuite) TestConvertersOpt(c *C) {
 	intConv := func(s string) (any, error) {
 		i, err := strconv.Atoi(s)
@@ -159,6 +167,7 @@ func (s *ConfigParserSuite) TestConvertersOpt(c *C) {
 	c.Assert(pBool, Equals, false)
 }
 
+// TestAllowNoValueOptParsedFromReader tests key with no value.
 func (s *ConfigParserSuite) TestAllowNoValueOptParsedFromReader(c *C) {
 	parsed, err := configparser.ParseReaderWithOptions(
 		strings.NewReader("[empty]\noption\n\n"), configparser.AllowNoValue,
@@ -170,6 +179,7 @@ func (s *ConfigParserSuite) TestAllowNoValueOptParsedFromReader(c *C) {
 	c.Assert(ok, Equals, true)
 }
 
+// TestAllowNoValueOptParsedFromFile tests key with no value.
 func (s *ConfigParserSuite) TestAllowNoValueOptParsedFromFile(c *C) {
 	parsed, err := configparser.ParseWithOptions(
 		"testdata/example.cfg", configparser.AllowNoValue,
@@ -181,6 +191,7 @@ func (s *ConfigParserSuite) TestAllowNoValueOptParsedFromFile(c *C) {
 	c.Assert(ok, Equals, true)
 }
 
+// TestStrictOptDuplicateSection tests strict option with section duplicate.
 func (s *ConfigParserSuite) TestStrictOptDuplicateSection(c *C) {
 	_, err := configparser.ParseReaderWithOptions(
 		strings.NewReader("[dubl]\noption=1\n\n[dubl]\noption=2\n\n"),
@@ -191,7 +202,8 @@ func (s *ConfigParserSuite) TestStrictOptDuplicateSection(c *C) {
 	c.Assert(err.Error(), Equals, "section \"dubl\" error: already exist")
 }
 
-func (s *ConfigParserSuite) TestStrictOptDuplicateOption(c *C) {
+// TestStrictOptDuplicateValue tests strict option with value duplicate.
+func (s *ConfigParserSuite) TestStrictOptDuplicateValue(c *C) {
 	_, err := configparser.ParseReaderWithOptions(
 		strings.NewReader("[section1]\ndubl=1\n\n[section2]\ndubl=2\n\n"),
 		configparser.Strict,
