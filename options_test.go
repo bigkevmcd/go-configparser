@@ -10,16 +10,45 @@ import (
 	"github.com/bigkevmcd/go-configparser/chainmap"
 )
 
+type customInterpolator struct {
+	maps []chainmap.Dict
+}
+
+func newCustomInterpolator() *customInterpolator {
+	return &customInterpolator{
+		maps: make([]chainmap.Dict, 0),
+	}
+}
+
+func (ci *customInterpolator) Add(d ...chainmap.Dict) {
+	ci.maps = append(ci.maps, d...)
+}
+
+func (ci *customInterpolator) Len() int { return len(ci.maps) }
+
+func (ci *customInterpolator) Get(key string) string {
+	var value string
+
+	for _, dict := range ci.maps {
+		if result, present := dict[key]; present {
+			value = result
+		}
+	}
+
+	return "/new" + value
+}
+
+// TestInterpolationOpt tests custom interpolator.
 func (s *ConfigParserSuite) TestInterpolationOpt(c *C) {
 	parsed, err := configparser.ParseReaderWithOptions(
 		strings.NewReader("[DEFAULT]\ndir=/home\n[paths]\npath=%(dir)s/something\n\n"),
-		configparser.Interpolation(chainmap.New()),
+		configparser.Interpolation(newCustomInterpolator()),
 	)
 	c.Assert(err, IsNil)
 
 	v, err := parsed.GetInterpolated("paths", "path")
 	c.Assert(err, IsNil)
-	c.Assert(v, Equals, "/home/something")
+	c.Assert(v, Equals, "/new/home/something")
 }
 
 func (s *ConfigParserSuite) TestCommentPrefixesOpt(c *C) {
