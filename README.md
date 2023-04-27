@@ -1,4 +1,4 @@
-# go-configparser [![Build Status](https://travis-ci.org/bigkevmcd/go-configparser.png)](https://travis-ci.org/bigkevmcd/go-configparser)
+# go-configparser [![Go](https://github.com/bigkevmcd/go-configparser/actions/workflows/go.yml/badge.svg)](https://github.com/bigkevmcd/go-configparser/actions/workflows/go.yml)
 Go implementation of the Python ConfigParser class.
 
 This can parse Python-compatible ConfigParser config files, including support for option interpolation.
