@@ -1,8 +1,9 @@
 package chainmap_test
 
 import (
-	"github.com/bigkevmcd/go-configparser/chainmap"
 	"testing"
+
+	"github.com/bigkevmcd/go-configparser/chainmap"
 
 	gc "gopkg.in/check.v1"
 )
@@ -50,4 +51,15 @@ func (s *ChainMapSuite) TestGet3(c *gc.C) {
 
 	result := chainMap.Get("value")
 	c.Assert(result, gc.Equals, "3")
+}
+
+func (s *ChainMapSuite) TestAdd(c *gc.C) {
+	chainMap := chainmap.New(s.dict1)
+
+	result := chainMap.Get("value")
+	c.Assert(result, gc.Equals, "3")
+
+	chainMap.Add(s.dict2)
+	result = chainMap.Get("value")
+	c.Assert(result, gc.Equals, "4")
 }

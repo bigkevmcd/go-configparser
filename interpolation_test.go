@@ -45,5 +45,6 @@ func (s *ConfigParserSuite) TestItemsWithDefaultsInterpolated(c *C) {
 		"TableName":       "MyCaseSensitiveTableName",
 		"max_build_time":  "200",
 		"log_dir":         "/srv/logs",
-		"base_dir":        "/srv"})
+		"base_dir":        "/srv",
+	})
 }

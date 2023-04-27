@@ -1,17 +1,15 @@
 package configparser_test
 
 import (
+	"io"
+	"os"
+	"path"
 	"strings"
+	"testing"
+
+	. "gopkg.in/check.v1"
 
 	"github.com/bigkevmcd/go-configparser"
-	. "gopkg.in/check.v1"
-	gc "gopkg.in/check.v1"
-
-	"io/ioutil"
-	"os"
-
-	"path"
-	"testing"
 )
 
 func Test(t *testing.T) { TestingT(t) }
@@ -74,7 +72,7 @@ func (s *ConfigParserSuite) TestSaveWithDelimiter(c *C) {
 	f, err := os.Open(tempfile)
 	c.Assert(err, IsNil)
 
-	data, err := ioutil.ReadAll(f)
+	data, err := io.ReadAll(f)
 	c.Assert(err, IsNil)
 	f.Close()
 	c.Assert(string(data), Equals, "[othersection]\nmyoption = myvalue\nnewoption = novalue\n\n[testing]\nmyoption = value\n\n")
@@ -106,22 +104,52 @@ func (s *ConfigParserSuite) TestSaveWithDelimiterAndDefaults(c *C) {
 	f, err := os.Open(tempfile)
 	c.Assert(err, IsNil)
 
-	data, err := ioutil.ReadAll(f)
+	data, err := io.ReadAll(f)
 	c.Assert(err, IsNil)
 	f.Close()
 	c.Assert(string(data), Equals, "[DEFAULT]\ntesting = value\n\n[othersection]\nmyoption = myvalue\nnewoption = novalue\n\n[testing]\nmyoption = value\n\n")
 }
 
 // ParseFromReader() parses the Config data from an io.Reader.
-func (s *ConfigParserSuite) TestParseFromReader(c *gc.C) {
-	parsed, err := configparser.ParseReader(strings.NewReader("[DEFAULT]\ntesting = value\n\n[othersection]\nmyoption = myvalue\nnewoption = novalue\nfinal = foo[bar]\n\n[testing]\nmyoption = value\n\n"))
-	c.Assert(err, gc.IsNil)
+func (s *ConfigParserSuite) TestParseFromReader(c *C) {
+	parsed, err := configparser.ParseReader(strings.NewReader("[DEFAULT]\ntesting = value\n\n[othersection]\nmyoption = myvalue\nnewoption = novalue\nfinal = foo[bar]\n\n[testing]\nmyoption = value\nemptyoption\n\n"))
+	c.Assert(err, IsNil)
 
 	result, err := parsed.Items("othersection")
-	c.Assert(err, gc.IsNil)
-	c.Assert(result, gc.DeepEquals, configparser.Dict{"myoption": "myvalue", "newoption": "novalue", "final": "foo[bar]"})
+	c.Assert(err, IsNil)
+	c.Assert(result, DeepEquals, configparser.Dict{
+		"myoption":  "myvalue",
+		"newoption": "novalue",
+		"final":     "foo[bar]",
+	})
 }
 
-func assertSuccessful(c *gc.C, err error) {
-	c.Assert(err, gc.IsNil)
+// TestMultilineValue tests multiline value parsing.
+func (s *ConfigParserSuite) TestMultilineValue(c *C) {
+	parsed, err := configparser.ParseReader(
+		strings.NewReader(`[DEFAULT]
+testing = multiline
+ value
+
+myoption = another
+ multiline
+		value
+
+broken_option = this value will miss
+
+ its multiline
+`),
+	)
+	c.Assert(err, IsNil)
+	result, err := parsed.Items("DEFAULT")
+	c.Assert(err, IsNil)
+	c.Assert(result, DeepEquals, configparser.Dict{
+		"testing":       "multiline\nvalue",
+		"myoption":      "another\nmultiline\nvalue",
+		"broken_option": "this value will miss",
+	})
+}
+
+func assertSuccessful(c *C, err error) {
+	c.Assert(err, IsNil)
 }

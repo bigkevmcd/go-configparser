@@ -2,12 +2,14 @@ package configparser
 
 import "strings"
 
+// Section represent each section of the configuration file.
 type Section struct {
 	Name    string
 	options Dict
 	lookup  Dict
 }
 
+// Add adds new key-value pair to the section.
 func (s *Section) Add(key, value string) error {
 	lookupKey := s.safeKey(key)
 	s.options[key] = s.safeValue(value)
@@ -16,6 +18,10 @@ func (s *Section) Add(key, value string) error {
 	return nil
 }
 
+// Get returns value of an option with the given key.
+//
+// Returns an error if the option does not exist either in the section or in
+// the defaults.
 func (s *Section) Get(key string) (string, error) {
 	lookupKey, present := s.lookup[s.safeKey(key)]
 	if !present {
@@ -28,10 +34,12 @@ func (s *Section) Get(key string) (string, error) {
 	return "", getNoOptionError(s.Name, key)
 }
 
+// Options returns a slice of option names.
 func (s *Section) Options() []string {
 	return s.options.Keys()
 }
 
+// Items returns a Dict with the key-value pairs.
 func (s *Section) Items() Dict {
 	return s.options
 }
@@ -44,6 +52,10 @@ func (s *Section) safeKey(in string) string {
 	return strings.ToLower(strings.TrimSpace(in))
 }
 
+// Remove removes option with the given name from the section.
+//
+// Returns an error if the option does not exist either in the section or in
+// the defaults.
 func (s *Section) Remove(key string) error {
 	_, present := s.options[key]
 	if !present {

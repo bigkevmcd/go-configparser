@@ -7,7 +7,7 @@ import (
 )
 
 func (p *ConfigParser) isDefaultSection(section string) bool {
-	return section == defaultSectionName
+	return section == p.opt.defaultSection
 }
 
 // Defaults returns the items in the map used for default values.
@@ -79,10 +79,24 @@ func (p *ConfigParser) Options(section string) ([]string, error) {
 
 // Get returns string value for the named option.
 //
-// Returns an error if a section does not exist
+// Returns an error if a section does not exist.
 // Returns an error if the option does not exist either in the section or in
-// the defaults
+// the defaults.
 func (p *ConfigParser) Get(section, option string) (string, error) {
+	result, err := p.get(section, option)
+	if err != nil {
+		return "", err
+	}
+
+	value, err := p.opt.converters[StringConv](result)
+	if err != nil {
+		return "", err
+	}
+
+	return value.(string), nil
+}
+
+func (p *ConfigParser) get(section, option string) (string, error) {
 	if !p.HasSection(section) {
 		if !p.isDefaultSection(section) {
 			return "", getNoSectionError(section)
@@ -125,8 +139,12 @@ func (p *ConfigParser) ItemsWithDefaults(section string) (Dict, error) {
 // Items returns a copy of the section Dict not including the Defaults.
 //
 // NOTE: This is different from the Python version which returns a list of
-// tuples
+// tuples.
 func (p *ConfigParser) Items(section string) (Dict, error) {
+	if section == p.opt.defaultSection {
+		return p.defaults.Items(), nil
+	}
+
 	if !p.HasSection(section) {
 		return nil, getNoSectionError(section)
 	}
@@ -151,45 +169,64 @@ func (p *ConfigParser) Set(section, option, value string) error {
 	return setSection.Add(option, value)
 }
 
+// GetInt64 returns int64 representation of the named option.
+//
+// Returns an error if a section does not exist.
+// Returns an error if the option does not exist either in the section or in
+// the defaults.
 func (p *ConfigParser) GetInt64(section, option string) (int64, error) {
-	result, err := p.Get(section, option)
-	if err != nil {
-		return 0, err
-	}
-	value, err := strconv.ParseInt(result, 10, 64)
+	result, err := p.get(section, option)
 	if err != nil {
 		return 0, err
 	}
 
-	return value, nil
+	value, err := p.opt.converters[IntConv](result)
+	if err != nil {
+		return 0, err
+	}
+
+	return value.(int64), nil
 }
 
+// GetFloat64 returns float64 representation of the named option.
+//
+// Returns an error if a section does not exist.
+// Returns an error if the option does not exist either in the section or in
+// the defaults.
 func (p *ConfigParser) GetFloat64(section, option string) (float64, error) {
-	result, err := p.Get(section, option)
-	if err != nil {
-		return 0, err
-	}
-	value, err := strconv.ParseFloat(result, 64)
+	result, err := p.get(section, option)
 	if err != nil {
 		return 0, err
 	}
 
-	return value, nil
+	value, err := p.opt.converters[FloatConv](result)
+	if err != nil {
+		return 0, err
+	}
+
+	return value.(float64), nil
 }
 
+// GetBool returns bool representation of the named option.
+//
+// Returns an error if a section does not exist.
+// Returns an error if the option does not exist either in the section or in
+// the defaults.
 func (p *ConfigParser) GetBool(section, option string) (bool, error) {
-	result, err := p.Get(section, option)
+	result, err := p.get(section, option)
 	if err != nil {
 		return false, err
 	}
-	booleanValue, present := boolMapping[result]
-	if !present {
-		return false, fmt.Errorf("not a boolean: %q", result)
+
+	value, err := p.opt.converters[BoolConv](result)
+	if err != nil {
+		return false, err
 	}
 
-	return booleanValue, nil
+	return value.(bool), nil
 }
 
+// RemoveSection removes given section from the ConfigParser.
 func (p *ConfigParser) RemoveSection(section string) error {
 	if !p.HasSection(section) {
 		return getNoSectionError(section)
@@ -199,6 +236,7 @@ func (p *ConfigParser) RemoveSection(section string) error {
 	return nil
 }
 
+// HasOption checks if section contains option.
 func (p *ConfigParser) HasOption(section, option string) (bool, error) {
 	var s *Section
 	if p.isDefaultSection(section) {
@@ -213,6 +251,7 @@ func (p *ConfigParser) HasOption(section, option string) (bool, error) {
 	return err == nil, nil
 }
 
+// RemoveOption removes option from the section.
 func (p *ConfigParser) RemoveOption(section, option string) error {
 	var s *Section
 	if p.isDefaultSection(section) {
@@ -224,4 +263,56 @@ func (p *ConfigParser) RemoveOption(section, option string) error {
 	}
 
 	return s.Remove(option)
+}
+
+func (p *ConfigParser) inOptions(key string) error {
+	opts, err := p.allOptions()
+	if err != nil {
+		return err
+	}
+
+	for _, o := range opts {
+		if key == o {
+			return fmt.Errorf(
+				"option %q already exists and strict flag was set",
+				key,
+			)
+		}
+	}
+
+	return nil
+}
+
+func (p *ConfigParser) allOptions() ([]string, error) {
+	sections := p.Sections()
+	options := make([]string, 0)
+	for _, s := range sections {
+		o, err := p.Options(s)
+		if err != nil {
+			return nil, err
+		}
+
+		options = append(options, o...)
+	}
+
+	return options, nil
+}
+
+func defaultGet(value string) (any, error) { return value, nil }
+
+func defaultGetInt64(value string) (any, error) {
+	return strconv.ParseInt(value, 10, 64)
+}
+
+func defaultGetFloat64(value string) (any, error) {
+	return strconv.ParseFloat(value, 64)
+}
+
+func defaultGetBool(value string) (any, error) {
+	booleanValue, present := boolMapping[value]
+	if !present {
+		return false, fmt.Errorf("not a boolean: %q", value)
+	}
+
+	return booleanValue, nil
 }
