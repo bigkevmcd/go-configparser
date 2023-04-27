@@ -13,14 +13,13 @@ type options struct {
 	interpolation         Interpolator
 	commentPrefixes       Prefixes
 	inlineCommentPrefixes Prefixes
+	multilinePrefixes     Prefixes
 	defaultSection        string
 	delimiters            string
 	converters            Converter
 	allowNoValue          bool
+	emptyLines            bool
 	strict                bool
-
-	// TODO: under investigation, have no effect now.
-	emptyLines bool
 }
 
 // Converter contains custom convert functions for available types.
@@ -76,10 +75,11 @@ type Interpolator interface {
 // defaultOptions returns the struct of preset required options.
 func defaultOptions() *options {
 	return &options{
-		interpolation:   chainmap.New(),
-		defaultSection:  defaultSectionName,
-		delimiters:      ":=",
-		commentPrefixes: Prefixes{"#", ";"},
+		interpolation:     chainmap.New(),
+		defaultSection:    defaultSectionName,
+		delimiters:        ":=",
+		commentPrefixes:   Prefixes{"#", ";"},
+		multilinePrefixes: Prefixes{"\t", " "},
 		converters: Converter{
 			StringConv: defaultGet,
 			IntConv:    defaultGetInt64,
@@ -116,6 +116,14 @@ func InlineCommentPrefixes(pr Prefixes) optFunc {
 	}
 }
 
+// MultilinePrefixes sets a slice of prefixes, which will define
+// multiline value.
+func MultilinePrefixes(pr Prefixes) optFunc {
+	return func(o *options) {
+		o.multilinePrefixes = pr
+	}
+}
+
 // DefaultSection sets the name of the default section.
 func DefaultSection(n string) optFunc {
 	return func(o *options) {
@@ -134,7 +142,7 @@ func Delimiters(d string) optFunc {
 // value of the Get* methods instead of the default convertion.
 //
 // NOTE: the caller should guarantee type assetion to the requested type
-// after custom processing. Or the method will panic.
+// after custom processing or the method will panic.
 func Converters(conv Converter) optFunc {
 	return func(o *options) {
 		o.converters = conv
@@ -146,3 +154,6 @@ func AllowNoValue(o *options) { o.allowNoValue = true }
 
 // Strict prohibits the duplicates of options and values.
 func Strict(o *options) { o.strict = true }
+
+// AllowEmptyLines allows empty lines in multiline values.
+func AllowEmptyLines(o *options) { o.emptyLines = true }
