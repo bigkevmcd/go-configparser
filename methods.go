@@ -139,8 +139,12 @@ func (p *ConfigParser) ItemsWithDefaults(section string) (Dict, error) {
 // Items returns a copy of the section Dict not including the Defaults.
 //
 // NOTE: This is different from the Python version which returns a list of
-// tuples
+// tuples.
 func (p *ConfigParser) Items(section string) (Dict, error) {
+	if section == p.opt.defaultSection {
+		return p.defaults.Items(), nil
+	}
+
 	if !p.HasSection(section) {
 		return nil, getNoSectionError(section)
 	}
