@@ -117,6 +117,11 @@ func (s *ConfigParserSuite) TestParseFromReader(c *C) {
 
 	result, err := parsed.Items("othersection")
 	c.Assert(err, IsNil)
+	c.Assert(result, DeepEquals, configparser.Dict{
+		"myoption":  "myvalue",
+		"newoption": "novalue",
+		"final":     "foo[bar]",
+	})
 }
 
 // TestMultilineValue tests multiline value parsing.
