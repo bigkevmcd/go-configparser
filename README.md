@@ -60,7 +60,9 @@ The ConfigParser supports almost all custom options available in the Python vers
 * Delimiters - allows to set custom **key-value** pair delimiters.
 * CommentPrefixes - allows to set custom comment line prefix. If line starts with one of the given `Prefixes` it will be passed during parsing.
 * InlineCommentPrefixes - allows to set custom inline comment delimiter. This option checks if the line contains any of the given `Prefixes` and if so, splits the string by the prefix and returns the 0 index of the slice.
+* MultilinePrefixes - allows to set custom multiline values prefixes. This option checks if the line starts with one of the given `Prefixes` and if so, counts it as a part of the current value.
 * Strict - if set to `true`, parser will return new wrapped `ErrAlreadyExist` for duplicates of *sections* or *options* in one source.
+* AllowEmptyLines - if set to `true` allows multiline values to include empty lines as their part. Otherwise the value will be parsed until an empty line or the line which does not start with one of the allowed multiline prefixes.
 * Interpolation - allows to set custom behaviour for values interpolation. Interface was added, which defaults to `chainmap.ChainMap` instance.
 ```go
 type Interpolator interface {
@@ -117,10 +119,11 @@ Default options, which are always preset:
 ```go
 func defaultOptions() *options {
 	return &options{
-		interpolation:   chainmap.New(),
-		defaultSection:  defaultSectionName,
-		delimiters:      ":=",
-		commentPrefixes: Prefixes{"#", ";"},
+		interpolation:     chainmap.New(),
+		defaultSection:    defaultSectionName,
+		delimiters:        ":=",
+		commentPrefixes:   Prefixes{"#", ";"},
+		multilinePrefixes: Prefixes{"\t", " "},
 		converters: Converter{
 			StringConv: defaultGet,
 			IntConv:    defaultGetInt64,
