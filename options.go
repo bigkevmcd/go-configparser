@@ -1,6 +1,8 @@
 package configparser
 
 import (
+	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/bigkevmcd/go-configparser/chainmap"
@@ -20,6 +22,31 @@ type options struct {
 	allowNoValue          bool
 	emptyLines            bool
 	strict                bool
+}
+
+func (o *options) compileRegex() (
+	keyValue *regexp.Regexp, keyWNoValue *regexp.Regexp, err error,
+) {
+	if o.allowNoValue {
+		keyWNoValue, err = regexp.Compile(
+			fmt.Sprintf(
+				`([^%[1]s\s][^%[1]s]*)\s*((?P<vi>[%[1]s]+)\s*(.*)$)?`,
+				o.delimiters,
+			),
+		)
+		if err != nil {
+			return
+		}
+	}
+
+	keyValue, err = regexp.Compile(
+		fmt.Sprintf(
+			`([^%[1]s\s][^%[1]s]*)\s*(?P<vi>[%[1]s]+)\s*(.*)$`,
+			o.delimiters,
+		),
+	)
+
+	return
 }
 
 // Converter contains custom convert functions for available types.
