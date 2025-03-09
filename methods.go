@@ -325,7 +325,7 @@ func defaultGetBool(value string) (any, error) {
 	return booleanValue, nil
 }
 
-// assertValue tries vakue assertuon to the given type, returns error if unsuccessful.
+// assertValue tries value assertion to the given type, returns error if unsuccessful.
 func assertValue[T ~string | ~int64 | ~float64 | ~bool](value any) (T, error) {
 	v, ok := value.(T)
 	if ok {
