@@ -16,8 +16,9 @@ func (p *ConfigParser) Defaults() Dict {
 }
 
 // Sections returns a list of section names, excluding [DEFAULT].
+// Returned slice is sorted.
 func (p *ConfigParser) Sections() []string {
-	sections := make([]string, 0)
+	sections := make([]string, 0, len(p.config))
 	for section := range p.config {
 		sections = append(sections, section)
 	}
@@ -54,7 +55,8 @@ func (p *ConfigParser) HasSection(section string) bool {
 	return present
 }
 
-// Options returns a list of option mames for the given section name.
+// Options returns a list of option names for the given section name.
+// Returnes slice is sorted.
 //
 // Returns an error if the section does not exist.
 func (p *ConfigParser) Options(section string) ([]string, error) {
