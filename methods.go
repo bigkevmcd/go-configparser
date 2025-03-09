@@ -57,7 +57,7 @@ func (p *ConfigParser) HasSection(section string) bool {
 }
 
 // Options returns a list of option names for the given section name.
-// Returnes slice is sorted.
+// Returned slice is sorted.
 //
 // Returns an error if the section does not exist.
 func (p *ConfigParser) Options(section string) ([]string, error) {
