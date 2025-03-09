@@ -1,6 +1,7 @@
 package configparser_test
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/bigkevmcd/go-configparser"
@@ -99,6 +100,22 @@ func (s *ConfigParserSuite) TestGet(c *gc.C) {
 	result, err := s.p.Get("follower", "max_build_time")
 	c.Assert(err, gc.IsNil)
 	c.Assert(result, gc.Equals, "200")
+}
+
+func (s *ConfigParserSuite) TestGetConvError(c *gc.C) {
+	p, err := configparser.NewWithDefaults(
+		configparser.Dict{"key": "value"},
+		configparser.Converters(
+			configparser.Converter{
+				configparser.StringConv: func(s string) (any, error) {
+					return nil, errors.New("invalid string")
+				},
+			},
+		),
+	)
+	c.Assert(err, gc.IsNil)
+	_, err = p.Get("DEFAULT", "key")
+	c.Assert(err, gc.ErrorMatches, "invalid string")
 }
 
 // Get(section, option) should return the option value for the named section
