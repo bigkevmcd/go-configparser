@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 )
 
 func (p *ConfigParser) isDefaultSection(section string) bool {
@@ -319,7 +320,7 @@ func defaultGetFloat64(value string) (any, error) {
 }
 
 func defaultGetBool(value string) (any, error) {
-	booleanValue, present := boolMapping[value]
+	booleanValue, present := boolMapping[strings.ToLower(value)]
 	if !present {
 		return false, fmt.Errorf("not a boolean: %q", value)
 	}

@@ -296,14 +296,14 @@ func (s *ConfigParserSuite) TestGetBool(c *gc.C) {
 	newParser := configparser.New()
 	newParser.AddSection("testing")
 
-	for _, value := range []string{"1", "yes", "true", "on"} {
+	for _, value := range []string{"1", "yes", "true", "on", "True", "ON"} {
 		newParser.Set("testing", "value", value)
 		result, err := newParser.GetBool("testing", "value")
 		c.Assert(err, gc.IsNil)
 		c.Assert(result, gc.Equals, true)
 	}
 
-	for _, value := range []string{"0", "no", "false", "off"} {
+	for _, value := range []string{"0", "no", "false", "off", "False", "OFF"} {
 		newParser.Set("testing", "value", value)
 		result, err := newParser.GetBool("testing", "value")
 		c.Assert(err, gc.IsNil)
