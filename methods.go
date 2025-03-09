@@ -97,22 +97,30 @@ func (p *ConfigParser) Get(section, option string) (string, error) {
 }
 
 func (p *ConfigParser) get(section, option string) (string, error) {
-	if !p.HasSection(section) {
-		if !p.isDefaultSection(section) {
-			return "", getNoSectionError(section)
-		}
-		if value, err := p.defaults.Get(option); err != nil {
-			return "", getNoOptionError(section, option)
-		} else {
-			return value, nil
-		}
-	} else if value, err := p.config[section].Get(option); err == nil {
-		return value, nil
-	} else if value, err := p.defaults.Get(option); err == nil {
-		return value, nil
+	// Special case.
+	if p.isDefaultSection(section) {
+		return p.defaults.Get(option)
 	}
 
-	return "", getNoOptionError(section, option)
+	s, ok := p.config[section]
+	if !ok {
+		return "", getNoSectionError(section)
+	}
+
+	v, err := s.Get(option)
+	if err == nil {
+		return v, nil
+	}
+
+	// If given section has no option, fallback to check default.
+	dv, derr := p.defaults.Get(option)
+	if derr != nil {
+		// If option is not present in default section, return
+		// original error with the requested section name.
+		return "", err
+	}
+
+	return dv, nil
 }
 
 // ItemsWithDefaults returns a copy of the named section Dict including
