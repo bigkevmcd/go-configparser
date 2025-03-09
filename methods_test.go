@@ -1,6 +1,8 @@
 package configparser_test
 
 import (
+	"strings"
+
 	"github.com/bigkevmcd/go-configparser"
 
 	gc "gopkg.in/check.v1"
@@ -367,4 +369,28 @@ func (s *ConfigParserSuite) TestOptionsWithSectionStripsWhitespaceFromKeys(c *gc
 	result, err := s.p.Options("whitespace")
 	c.Assert(err, gc.IsNil)
 	c.Assert(result, gc.DeepEquals, []string{"base_dir", "bin_dir", "foo"})
+}
+
+func brokenConv(_ string) (any, error) { return nil, nil }
+
+// Get* methods must fail with a proper error instead of a panic if type assertion has failed.
+func (s *ConfigParserSuite) TestGetWithAssertionError(c *gc.C) {
+	parser, err := configparser.ParseReaderWithOptions(
+		strings.NewReader("[testing]\nstring=new string\nint=200\nfloat=3.14159265\nbool=TRUE"),
+		configparser.Converters(configparser.Converter{
+			configparser.StringConv: brokenConv,
+			configparser.IntConv:    brokenConv,
+			configparser.FloatConv:  brokenConv,
+			configparser.BoolConv:   brokenConv,
+		}),
+	)
+	c.Assert(err, gc.IsNil)
+	_, err = parser.Get("testing", "string")
+	c.Assert(err, gc.ErrorMatches, ".*assertion to string failed.*")
+	_, err = parser.GetInt64("testing", "int")
+	c.Assert(err, gc.ErrorMatches, ".*assertion to int64 failed.*")
+	_, err = parser.GetFloat64("testing", "float")
+	c.Assert(err, gc.ErrorMatches, ".*assertion to float64 failed.*")
+	_, err = parser.GetBool("testing", "bool")
+	c.Assert(err, gc.ErrorMatches, ".*assertion to bool failed.*")
 }
