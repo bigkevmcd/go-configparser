@@ -143,7 +143,9 @@ func Delimiters(d string) optFunc {
 // after custom processing or the method will panic.
 func Converters(conv Converter) optFunc {
 	return func(o *options) {
-		o.converters = conv
+		for k, fn := range conv {
+			o.converters[k] = fn
+		}
 	}
 }
 
