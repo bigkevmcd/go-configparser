@@ -93,26 +93,34 @@ func (p *ConfigParser) Get(section, option string) (string, error) {
 		return "", err
 	}
 
-	return value.(string), nil
+	return assertValue[string](value)
 }
 
 func (p *ConfigParser) get(section, option string) (string, error) {
-	if !p.HasSection(section) {
-		if !p.isDefaultSection(section) {
-			return "", getNoSectionError(section)
-		}
-		if value, err := p.defaults.Get(option); err != nil {
-			return "", getNoOptionError(section, option)
-		} else {
-			return value, nil
-		}
-	} else if value, err := p.config[section].Get(option); err == nil {
-		return value, nil
-	} else if value, err := p.defaults.Get(option); err == nil {
-		return value, nil
+	// Special case.
+	if p.isDefaultSection(section) {
+		return p.defaults.Get(option)
 	}
 
-	return "", getNoOptionError(section, option)
+	s, ok := p.config[section]
+	if !ok {
+		return "", getNoSectionError(section)
+	}
+
+	v, err := s.Get(option)
+	if err == nil {
+		return v, nil
+	}
+
+	// If given section has no option, fallback to check default.
+	dv, derr := p.defaults.Get(option)
+	if derr != nil {
+		// If option is not present in default section, return
+		// original error with the requested section name.
+		return "", err
+	}
+
+	return dv, nil
 }
 
 // ItemsWithDefaults returns a copy of the named section Dict including
@@ -185,7 +193,7 @@ func (p *ConfigParser) GetInt64(section, option string) (int64, error) {
 		return 0, err
 	}
 
-	return value.(int64), nil
+	return assertValue[int64](value)
 }
 
 // GetFloat64 returns float64 representation of the named option.
@@ -204,7 +212,7 @@ func (p *ConfigParser) GetFloat64(section, option string) (float64, error) {
 		return 0, err
 	}
 
-	return value.(float64), nil
+	return assertValue[float64](value)
 }
 
 // GetBool returns bool representation of the named option.
@@ -223,7 +231,7 @@ func (p *ConfigParser) GetBool(section, option string) (bool, error) {
 		return false, err
 	}
 
-	return value.(bool), nil
+	return assertValue[bool](value)
 }
 
 // RemoveSection removes given section from the ConfigParser.
@@ -315,4 +323,17 @@ func defaultGetBool(value string) (any, error) {
 	}
 
 	return booleanValue, nil
+}
+
+// assertValue tries value assertion to the given type, returns error if unsuccessful.
+func assertValue[T ~string | ~int64 | ~float64 | ~bool](value any) (T, error) {
+	v, ok := value.(T)
+	if ok {
+		return v, nil
+	}
+
+	// Default value of the type.
+	var d T
+
+	return d, fmt.Errorf("assertion to %T failed: incorrect value %q", d, value)
 }

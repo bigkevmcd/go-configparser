@@ -108,7 +108,6 @@ func main() {
 }
 ```
 Those functions triggered inside `ConfigParser.Get*` methods if presented and wraps the return value. 
-> NOTE: Since `ConvertFunc` returns `any`, the caller should guarantee type assertion to the requested type after custom processing!
 ```go
 type Converter map[string]ConvertFunc
 ```
