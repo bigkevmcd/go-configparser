@@ -150,6 +150,21 @@ broken_option = this value will miss
 	})
 }
 
+func (s *ConfigParserSuite) TestKeyValueRegexError(c *C) {
+	p := configparser.NewWithOptions(configparser.Delimiters("=-"))
+	err := p.ParseReader(strings.NewReader(""))
+	c.Assert(err, ErrorMatches, ".*error parsing regexp: invalid escape sequence.*")
+}
+
+func (s *ConfigParserSuite) TestKeyNoValueRegexError(c *C) {
+	p := configparser.NewWithOptions(
+		configparser.Delimiters("\\"),
+		configparser.AllowNoValue,
+	)
+	err := p.ParseReader(strings.NewReader(""))
+	c.Assert(err, ErrorMatches, ".*error parsing regexp: missing closing ].*")
+}
+
 func assertSuccessful(c *C, err error) {
 	c.Assert(err, IsNil)
 }

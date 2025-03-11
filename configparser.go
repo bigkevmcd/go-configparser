@@ -47,6 +47,10 @@ type ConfigParser struct {
 func (d Dict) Keys() []string {
 	keys := make([]string, 0, len(d))
 
+	if len(d) == 0 {
+		return keys
+	}
+
 	for key := range d {
 		keys = append(keys, key)
 	}
@@ -90,9 +94,8 @@ func NewWithOptions(opts ...optFunc) *ConfigParser {
 func NewWithDefaults(defaults Dict) (*ConfigParser, error) {
 	p := New()
 	for key, value := range defaults {
-		if err := p.defaults.Add(key, value); err != nil {
-			return nil, fmt.Errorf("failed to add %q to %q: %w", key, value, err)
-		}
+		// Add never returns an error.
+		_ = p.defaults.Add(key, value)
 	}
 	return p, nil
 }
@@ -191,24 +194,19 @@ func (p *ConfigParser) SaveWithDelimiter(filename, delimiter string) error {
 }
 
 // ParseReader parses data into ConfigParser from provided reader.
-func (p *ConfigParser) ParseReader(in io.Reader) error {
-	reader := bufio.NewReader(in)
-	var lineNo int
-	var curSect *Section
-	var key, value string
+func (p *ConfigParser) ParseReader(in io.Reader) (err error) {
+	var (
+		reader = bufio.NewReader(in)
 
-	keyValue := regexp.MustCompile(
-		fmt.Sprintf(
-			`([^%[1]s\s][^%[1]s]*)\s*(?P<vi>[%[1]s]+)\s*(.*)$`,
-			p.opt.delimiters,
-		),
+		lineNo     int
+		key, value string
+		curSect    *Section
 	)
-	keyWNoValue := regexp.MustCompile(
-		fmt.Sprintf(
-			`([^%[1]s\s][^%[1]s]*)\s*((?P<vi>[%[1]s]+)\s*(.*)$)?`,
-			p.opt.delimiters,
-		),
-	)
+
+	keyValue, keyWNoValue, err := p.opt.compileRegex()
+	if err != nil {
+		return err
+	}
 
 	for {
 		l, _, err := reader.ReadLine()
@@ -216,9 +214,8 @@ func (p *ConfigParser) ParseReader(in io.Reader) error {
 			// If error is end of file, then current key should be checked before return.
 			if errors.Is(err, io.EOF) {
 				if key != "" {
-					if err := curSect.Add(key, value); err != nil {
-						return fmt.Errorf("failed to add %q = %q: %w", key, value, err)
-					}
+					// Add never returns an error.
+					_ = curSect.Add(key, value)
 				}
 
 				return nil
@@ -255,9 +252,8 @@ func (p *ConfigParser) ParseReader(in io.Reader) error {
 				// multiline prefixes or it is an empty line which is not allowed within values,
 				// then it counts as the value parsing is finished and it can be added
 				// to the current section.
-				if err := curSect.Add(key, value); err != nil {
-					return fmt.Errorf("failed to add %q = %q: %w", key, value, err)
-				}
+				// Add never returns an error.
+				_ = curSect.Add(key, value)
 
 				// Drop key-value pair to empty strings.
 				key, value = "", ""
@@ -298,19 +294,20 @@ func (p *ConfigParser) ParseReader(in io.Reader) error {
 			}
 
 			value = p.opt.inlineCommentPrefixes.Split(match[3])
-		} else if match = keyWNoValue.FindStringSubmatch(line); len(match) > 0 &&
-			p.opt.allowNoValue {
-			if curSect == nil {
-				return fmt.Errorf("missing section header: %d %s", lineNo, line)
-			}
-			key = strings.TrimSpace(match[1])
-			if p.opt.strict {
-				if err := p.inOptions(key); err != nil {
-					return err
+		} else if p.opt.allowNoValue {
+			if match = keyWNoValue.FindStringSubmatch(line); len(match) > 0 {
+				if curSect == nil {
+					return fmt.Errorf("missing section header: %d %s", lineNo, line)
 				}
-			}
+				key = strings.TrimSpace(match[1])
+				if p.opt.strict {
+					if err := p.inOptions(key); err != nil {
+						return err
+					}
+				}
 
-			value = p.opt.inlineCommentPrefixes.Split(match[4])
+				value = p.opt.inlineCommentPrefixes.Split(match[4])
+			}
 		}
 	}
 }
