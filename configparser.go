@@ -91,8 +91,8 @@ func NewWithOptions(opts ...optFunc) *ConfigParser {
 }
 
 // NewWithDefaults allows creation of a new ConfigParser with a pre-existing Dict.
-func NewWithDefaults(defaults Dict) (*ConfigParser, error) {
-	p := New()
+func NewWithDefaults(defaults Dict, opts ...optFunc) (*ConfigParser, error) {
+	p := NewWithOptions(opts...)
 	for key, value := range defaults {
 		// Add never returns an error.
 		_ = p.defaults.Add(key, value)

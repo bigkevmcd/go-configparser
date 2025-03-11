@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 )
 
 func (p *ConfigParser) isDefaultSection(section string) bool {
@@ -16,8 +17,9 @@ func (p *ConfigParser) Defaults() Dict {
 }
 
 // Sections returns a list of section names, excluding [DEFAULT].
+// Returned slice is sorted.
 func (p *ConfigParser) Sections() []string {
-	sections := make([]string, 0)
+	sections := make([]string, 0, len(p.config))
 	for section := range p.config {
 		sections = append(sections, section)
 	}
@@ -54,7 +56,8 @@ func (p *ConfigParser) HasSection(section string) bool {
 	return present
 }
 
-// Options returns a list of option mames for the given section name.
+// Options returns a list of option names for the given section name.
+// Returned slice is sorted.
 //
 // Returns an error if the section does not exist.
 func (p *ConfigParser) Options(section string) ([]string, error) {
@@ -317,7 +320,7 @@ func defaultGetFloat64(value string) (any, error) {
 }
 
 func defaultGetBool(value string) (any, error) {
-	booleanValue, present := boolMapping[value]
+	booleanValue, present := boolMapping[strings.ToLower(value)]
 	if !present {
 		return false, fmt.Errorf("not a boolean: %q", value)
 	}
