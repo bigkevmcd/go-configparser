@@ -105,6 +105,7 @@ func defaultOptions() *options {
 		delimiters:        ":=",
 		commentPrefixes:   Prefixes{"#", ";"},
 		multilinePrefixes: Prefixes{"\t", " "},
+		emptyLines:        true, // Allow empty lines in multiline values by default
 		converters: Converter{
 			StringConv: defaultGet,
 			IntConv:    defaultGetInt64,
