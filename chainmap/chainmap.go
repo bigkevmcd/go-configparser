@@ -23,20 +23,19 @@ func (c *ChainMap) Add(dicts ...Dict) {
 	c.maps = append(c.maps, dicts...)
 }
 
-// Len returns the ammount of Dicts in the ChainMap.
+// Len returns the amount of Dicts in the ChainMap.
 func (c *ChainMap) Len() int {
 	return len(c.maps)
 }
 
-// Get gets the last value with the given key from the ChainMap.
-// If key does not exist returns empty string.
+// Get returns the value for the given key from the ChainMap.
+// The last-added dicts have priority, so this checks maps from last to
+// first and returns the first match. If key does not exist, returns empty string.
 func (c *ChainMap) Get(key string) string {
-	var value string
-
-	for _, dict := range c.maps {
-		if result, present := dict[key]; present {
-			value = result
+	for i := len(c.maps) - 1; i >= 0; i-- {
+		if result, present := c.maps[i][key]; present {
+			return result
 		}
 	}
-	return value
+	return ""
 }
