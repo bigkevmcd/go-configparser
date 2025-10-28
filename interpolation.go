@@ -25,8 +25,19 @@ func (p *ConfigParser) GetInterpolated(section, option string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	p.opt.interpolation.Add(chainmap.Dict(p.Defaults()), chainmap.Dict(o))
-	return p.getInterpolated(section, option, p.opt.interpolation)
+	// Create a fresh interpolator for each call to avoid accumulating state.
+	// If using the default ChainMap interpolator, create a new one.
+	// If using a custom interpolator, use it directly (and add dicts to it).
+	var interp Interpolator
+	if _, isChainMap := p.opt.interpolation.(*chainmap.ChainMap); isChainMap {
+		// Default case: create fresh ChainMap to avoid mutation
+		interp = chainmap.New(chainmap.Dict(p.Defaults()), chainmap.Dict(o))
+	} else {
+		// Custom interpolator: use it directly (legacy behavior for compatibility)
+		p.opt.interpolation.Add(chainmap.Dict(p.Defaults()), chainmap.Dict(o))
+		interp = p.opt.interpolation
+	}
+	return p.getInterpolated(section, option, interp)
 }
 
 // GetInterpolatedWithVars returns a string value for the named option.
@@ -40,8 +51,20 @@ func (p *ConfigParser) GetInterpolatedWithVars(section, option string, v Dict) (
 	if err != nil {
 		return "", err
 	}
-	p.opt.interpolation.Add(chainmap.Dict(p.Defaults()), chainmap.Dict(o), chainmap.Dict(v))
-	return p.getInterpolated(section, option, p.opt.interpolation)
+	// Create a fresh interpolator for each call to avoid accumulating state.
+	// If using the default ChainMap interpolator, create a new one.
+	// If using a custom interpolator, use it directly (and add dicts to it).
+	var interp Interpolator
+	if _, isChainMap := p.opt.interpolation.(*chainmap.ChainMap); isChainMap {
+		// Default case: create fresh ChainMap to avoid mutation
+		interp = chainmap.New(chainmap.Dict(p.Defaults()), chainmap.Dict(o), chainmap.Dict(v))
+	} else {
+		// Custom interpolator: use it directly (legacy behavior for compatibility)
+		p.opt.interpolation.Add(chainmap.Dict(p.Defaults()), chainmap.Dict(o), chainmap.Dict(v))
+		interp = p.opt.interpolation
+	}
+
+	return p.getInterpolated(section, option, interp)
 }
 
 // Private method which does the work of interpolating a value
@@ -49,15 +72,31 @@ func (p *ConfigParser) GetInterpolatedWithVars(section, option string, v Dict) (
 // returns the interpolated string.
 func (p *ConfigParser) interpolate(value string, options Interpolator) string {
 	for i := 0; i < maxInterpolationDepth; i++ {
-		if strings.Contains(value, "%(") {
-			value = interpolater.ReplaceAllStringFunc(value, func(m string) string {
-				// No ReplaceAllStringSubMatchFunc so apply the regexp twice
-				match := interpolater.FindAllStringSubmatch(m, 1)[0][1]
-				replacement := options.Get(match)
-				return replacement
-			})
+		if !strings.Contains(value, "%(") {
+			break
+		}
+
+		var changed bool
+		value = interpolater.ReplaceAllStringFunc(value, func(m string) string {
+			ms := interpolater.FindStringSubmatch(m)
+			if len(ms) < 2 {
+				return m
+			}
+
+			match := ms[1]
+			replacement := options.Get(match)
+			if replacement != m {
+				changed = true
+			}
+
+			return replacement
+		})
+
+		if !changed {
+			break
 		}
 	}
+
 	return value
 }
 
@@ -67,7 +106,7 @@ func (p *ConfigParser) ItemsWithDefaultsInterpolated(section string) (Dict, erro
 	if err != nil {
 		return nil, err
 	}
-	// TOOD: Optimise this...instantiate the ChainMap and delegate to interpolate()
+	// TODO: Optimise this... instantiate the ChainMap and delegate to interpolate()
 	for k := range s {
 		v, err := p.GetInterpolated(section, k)
 		if err != nil {
