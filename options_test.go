@@ -26,6 +26,10 @@ func (ci *customInterpolator) Add(d ...chainmap.Dict) {
 
 func (ci *customInterpolator) Len() int { return len(ci.maps) }
 
+func (ci *customInterpolator) Reset() {
+	ci.maps = ci.maps[:0]
+}
+
 func (ci *customInterpolator) Get(key string) string {
 	var value string
 

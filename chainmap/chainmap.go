@@ -23,9 +23,14 @@ func (c *ChainMap) Add(dicts ...Dict) {
 	c.maps = append(c.maps, dicts...)
 }
 
-// Len returns the ammount of Dicts in the ChainMap.
+// Len returns the amount of Dicts in the ChainMap.
 func (c *ChainMap) Len() int {
 	return len(c.maps)
+}
+
+// Reset clears all Dicts from the ChainMap.
+func (c *ChainMap) Reset() {
+	c.maps = c.maps[:0]
 }
 
 // Get gets the last value with the given key from the ChainMap.

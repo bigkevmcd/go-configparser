@@ -25,6 +25,7 @@ func (p *ConfigParser) GetInterpolated(section, option string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	p.opt.interpolation.Reset()
 	p.opt.interpolation.Add(chainmap.Dict(p.Defaults()), chainmap.Dict(o))
 	return p.getInterpolated(section, option, p.opt.interpolation)
 }
@@ -40,6 +41,7 @@ func (p *ConfigParser) GetInterpolatedWithVars(section, option string, v Dict) (
 	if err != nil {
 		return "", err
 	}
+	p.opt.interpolation.Reset()
 	p.opt.interpolation.Add(chainmap.Dict(p.Defaults()), chainmap.Dict(o), chainmap.Dict(v))
 	return p.getInterpolated(section, option, p.opt.interpolation)
 }
@@ -49,14 +51,15 @@ func (p *ConfigParser) GetInterpolatedWithVars(section, option string, v Dict) (
 // returns the interpolated string.
 func (p *ConfigParser) interpolate(value string, options Interpolator) string {
 	for i := 0; i < maxInterpolationDepth; i++ {
-		if strings.Contains(value, "%(") {
-			value = interpolater.ReplaceAllStringFunc(value, func(m string) string {
-				// No ReplaceAllStringSubMatchFunc so apply the regexp twice
-				match := interpolater.FindAllStringSubmatch(m, 1)[0][1]
-				replacement := options.Get(match)
-				return replacement
-			})
+		if !strings.Contains(value, "%(") {
+			break
 		}
+		value = interpolater.ReplaceAllStringFunc(value, func(m string) string {
+			// No ReplaceAllStringSubMatchFunc so apply the regexp twice
+			match := interpolater.FindAllStringSubmatch(m, 1)[0][1]
+			replacement := options.Get(match)
+			return replacement
+		})
 	}
 	return value
 }
@@ -67,7 +70,7 @@ func (p *ConfigParser) ItemsWithDefaultsInterpolated(section string) (Dict, erro
 	if err != nil {
 		return nil, err
 	}
-	// TOOD: Optimise this...instantiate the ChainMap and delegate to interpolate()
+	// TODO: Optimise this...instantiate the ChainMap and delegate to interpolate()
 	for k := range s {
 		v, err := p.GetInterpolated(section, k)
 		if err != nil {

@@ -29,8 +29,7 @@ func (s *ConfigParserSuite) TestNewWithDefaults(c *C) {
 	n := make(configparser.Dict)
 	n["testing"] = "value"
 
-	p, err := configparser.NewWithDefaults(n)
-	c.Assert(err, IsNil)
+	p := configparser.NewWithDefaults(n)
 
 	d := p.Defaults()
 	c.Assert(d["testing"], Equals, "value")
@@ -40,8 +39,7 @@ func (s *ConfigParserSuite) TestNewWithDefaults(c *C) {
 func (s *ConfigParserSuite) TestNewWithDefaultsCopied(c *C) {
 	n := make(configparser.Dict)
 	n["testing"] = "value"
-	p, err := configparser.NewWithDefaults(n)
-	c.Assert(err, IsNil)
+	p := configparser.NewWithDefaults(n)
 
 	n["testing2"] = "myvalue"
 
@@ -83,10 +81,9 @@ func (s *ConfigParserSuite) TestSaveWithDelimiter(c *C) {
 func (s *ConfigParserSuite) TestSaveWithDelimiterAndDefaults(c *C) {
 	n := make(configparser.Dict)
 	n["testing"] = "value"
-	p, err := configparser.NewWithDefaults(n)
-	c.Assert(err, IsNil)
+	p := configparser.NewWithDefaults(n)
 
-	err = p.AddSection("testing")
+	err := p.AddSection("testing")
 	c.Assert(err, IsNil)
 	err = p.Set("testing", "myoption", "value")
 	c.Assert(err, IsNil)

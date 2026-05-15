@@ -103,7 +103,7 @@ func (s *ConfigParserSuite) TestGet(c *gc.C) {
 }
 
 func (s *ConfigParserSuite) TestGetConvError(c *gc.C) {
-	p, err := configparser.NewWithDefaults(
+	p := configparser.NewWithDefaults(
 		configparser.Dict{"key": "value"},
 		configparser.Converters(
 			configparser.Converter{
@@ -113,8 +113,7 @@ func (s *ConfigParserSuite) TestGetConvError(c *gc.C) {
 			},
 		),
 	)
-	c.Assert(err, gc.IsNil)
-	_, err = p.Get("DEFAULT", "key")
+	_, err := p.Get("DEFAULT", "key")
 	c.Assert(err, gc.ErrorMatches, "invalid string")
 }
 
@@ -361,11 +360,13 @@ func (s *ConfigParserSuite) TestRemoveOption(c *gc.C) {
 	c.Assert(hasOption, gc.Equals, false)
 }
 
-// RemoveOption(section, option) does not remove options when the option doesn't
-// match the specified option exactly.
+// RemoveOption(section, option) is case-insensitive, matching Get behaviour.
 func (s *ConfigParserSuite) TestRemoveOptionMatchesPrecisely(c *gc.C) {
 	err := s.p.RemoveOption("follower", "max_build_TIME")
-	c.Assert(err, gc.ErrorMatches, "no option \"max_build_TIME\" in section: \"follower\"")
+	c.Assert(err, gc.IsNil)
+
+	_, err = s.p.Get("follower", "max_build_time")
+	c.Assert(err, gc.ErrorMatches, "no option \"max_build_time\" in section: \"follower\"")
 }
 
 // HasOption(section, option) should return true if section is default and the option is a default

@@ -64,14 +64,14 @@ func (p *ConfigParser) Options(section string) ([]string, error) {
 	if !p.HasSection(section) {
 		return nil, getNoSectionError(section)
 	}
-	seenOptions := make(map[string]bool)
+	seenOptions := make(map[string]struct{})
 	for _, option := range p.config[section].Options() {
-		seenOptions[option] = true
+		seenOptions[option] = struct{}{}
 	}
 	for _, option := range p.defaults.Options() {
-		seenOptions[option] = true
+		seenOptions[option] = struct{}{}
 	}
-	options := make([]string, 0)
+	options := make([]string, 0, len(seenOptions))
 	for option := range seenOptions {
 		options = append(options, option)
 	}
@@ -177,7 +177,8 @@ func (p *ConfigParser) Set(section, option, value string) error {
 		setSection = p.config[section]
 	}
 
-	return setSection.Add(option, value)
+	setSection.Add(option, value)
+	return nil
 }
 
 // GetInt64 returns int64 representation of the named option.
@@ -274,39 +275,6 @@ func (p *ConfigParser) RemoveOption(section, option string) error {
 	}
 
 	return s.Remove(option)
-}
-
-func (p *ConfigParser) inOptions(key string) error {
-	opts, err := p.allOptions()
-	if err != nil {
-		return err
-	}
-
-	for _, o := range opts {
-		if key == o {
-			return fmt.Errorf(
-				"option %q already exists and strict flag was set",
-				key,
-			)
-		}
-	}
-
-	return nil
-}
-
-func (p *ConfigParser) allOptions() ([]string, error) {
-	sections := p.Sections()
-	options := make([]string, 0)
-	for _, s := range sections {
-		o, err := p.Options(s)
-		if err != nil {
-			return nil, err
-		}
-
-		options = append(options, o...)
-	}
-
-	return options, nil
 }
 
 func defaultGet(value string) (any, error) { return value, nil }

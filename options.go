@@ -81,8 +81,8 @@ func (pr Prefixes) HasPrefix(str string) bool {
 // Returns original string if no matches.
 func (pr Prefixes) Split(str string) string {
 	for _, p := range pr {
-		if strings.Contains(str, p) {
-			return strings.Split(str, p)[0]
+		if before, _, found := strings.Cut(str, p); found {
+			return before
 		}
 	}
 
@@ -95,6 +95,7 @@ type Interpolator interface {
 	Add(...chainmap.Dict)
 	Len() int
 	Get(string) string
+	Reset()
 }
 
 // defaultOptions returns the struct of preset required options.

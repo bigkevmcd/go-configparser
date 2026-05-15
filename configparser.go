@@ -2,11 +2,11 @@ package configparser
 
 import (
 	"bufio"
-	"bytes"
 	"errors"
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
@@ -46,10 +46,6 @@ type ConfigParser struct {
 // Keys returns a sorted slice of keys
 func (d Dict) Keys() []string {
 	keys := make([]string, 0, len(d))
-
-	if len(d) == 0 {
-		return keys
-	}
 
 	for key := range d {
 		keys = append(keys, key)
@@ -91,13 +87,12 @@ func NewWithOptions(opts ...optFunc) *ConfigParser {
 }
 
 // NewWithDefaults allows creation of a new ConfigParser with a pre-existing Dict.
-func NewWithDefaults(defaults Dict, opts ...optFunc) (*ConfigParser, error) {
+func NewWithDefaults(defaults Dict, opts ...optFunc) *ConfigParser {
 	p := NewWithOptions(opts...)
 	for key, value := range defaults {
-		// Add never returns an error.
-		_ = p.defaults.Add(key, value)
+		p.defaults.Add(key, value)
 	}
-	return p, nil
+	return p
 }
 
 // NewConfigParserFromFile creates a new ConfigParser struct populated from the
@@ -142,55 +137,60 @@ func Parse(filename string) (*ConfigParser, error) {
 
 // ParseWithOptions takes a filename and parses it into a ConfigParser value with given options.
 func ParseWithOptions(filename string, opts ...optFunc) (*ConfigParser, error) {
-	p := NewWithOptions(opts...)
-	data, err := os.ReadFile(filename)
+	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
 	}
-	err = p.ParseReader(bytes.NewReader(data))
+	defer file.Close()
+	p := NewWithOptions(opts...)
+	err = p.ParseReader(file)
 	return p, err
 }
 
-func writeSection(file *os.File, delimiter string, section *Section) error {
-	_, err := file.WriteString(fmt.Sprintf("[%s]\n", section.Name))
+func writeSection(w io.Writer, delimiter string, section *Section) error {
+	_, err := fmt.Fprintf(w, "[%s]\n", section.Name)
 	if err != nil {
 		return err
 	}
 
 	for _, option := range section.Options() {
-		_, err = file.WriteString(fmt.Sprintf("%s %s %s\n", option, delimiter, section.options[option]))
+		_, err = fmt.Fprintf(w, "%s %s %s\n", option, delimiter, section.options[option])
 		if err != nil {
 			return err
 		}
 	}
-	_, err = file.WriteString("\n")
+	_, err = fmt.Fprintln(w)
 	return err
 }
 
 // SaveWithDelimiter writes the current state of the ConfigParser to the named
 // file with the specified delimiter.
 func (p *ConfigParser) SaveWithDelimiter(filename, delimiter string) error {
-	f, err := os.Create(filename)
+	tmp, err := os.CreateTemp(filepath.Dir(filename), ".configparser-*")
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	tmpName := tmp.Name()
 
 	if len(p.defaults.Options()) > 0 {
-		err = writeSection(f, delimiter, p.defaults)
-		if err != nil {
-			return err
-		}
+		err = writeSection(tmp, delimiter, p.defaults)
 	}
-
 	for _, s := range p.Sections() {
-		err = writeSection(f, delimiter, p.config[s])
 		if err != nil {
-			return err
+			break
 		}
+		err = writeSection(tmp, delimiter, p.config[s])
 	}
 
-	return nil
+	if closeErr := tmp.Close(); err == nil {
+		err = closeErr
+	}
+	if err != nil {
+		os.Remove(tmpName)
+		return err
+	}
+
+	return os.Rename(tmpName, filename)
 }
 
 // ParseReader parses data into ConfigParser from provided reader.
@@ -208,6 +208,20 @@ func (p *ConfigParser) ParseReader(in io.Reader) (err error) {
 		return err
 	}
 
+	// Pre-populate seenKeys for strict-mode duplicate detection.
+	var seenKeys map[string]struct{}
+	if p.opt.strict {
+		seenKeys = make(map[string]struct{})
+		for _, s := range p.Sections() {
+			for _, o := range p.config[s].Options() {
+				seenKeys[o] = struct{}{}
+			}
+		}
+		for _, o := range p.defaults.Options() {
+			seenKeys[o] = struct{}{}
+		}
+	}
+
 	for {
 		l, _, err := reader.ReadLine()
 		if err != nil {
@@ -215,7 +229,7 @@ func (p *ConfigParser) ParseReader(in io.Reader) (err error) {
 			if errors.Is(err, io.EOF) {
 				if key != "" {
 					// Add never returns an error.
-					_ = curSect.Add(key, value)
+					curSect.Add(key, value)
 				}
 
 				return nil
@@ -253,7 +267,7 @@ func (p *ConfigParser) ParseReader(in io.Reader) (err error) {
 				// then it counts as the value parsing is finished and it can be added
 				// to the current section.
 				// Add never returns an error.
-				_ = curSect.Add(key, value)
+				curSect.Add(key, value)
 
 				// Drop key-value pair to empty strings.
 				key, value = "", ""
@@ -288,9 +302,10 @@ func (p *ConfigParser) ParseReader(in io.Reader) (err error) {
 			}
 			key = strings.TrimSpace(match[1])
 			if p.opt.strict {
-				if err := p.inOptions(key); err != nil {
-					return err
+				if _, exists := seenKeys[key]; exists {
+					return fmt.Errorf("option %q already exists and strict flag was set", key)
 				}
+				seenKeys[key] = struct{}{}
 			}
 
 			value = p.opt.inlineCommentPrefixes.Split(match[3])
@@ -301,9 +316,10 @@ func (p *ConfigParser) ParseReader(in io.Reader) (err error) {
 				}
 				key = strings.TrimSpace(match[1])
 				if p.opt.strict {
-					if err := p.inOptions(key); err != nil {
-						return err
+					if _, exists := seenKeys[key]; exists {
+						return fmt.Errorf("option %q already exists and strict flag was set", key)
 					}
+					seenKeys[key] = struct{}{}
 				}
 
 				value = p.opt.inlineCommentPrefixes.Split(match[4])

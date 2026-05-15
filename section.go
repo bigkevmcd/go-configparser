@@ -10,12 +10,10 @@ type Section struct {
 }
 
 // Add adds new key-value pair to the section.
-func (s *Section) Add(key, value string) error {
+func (s *Section) Add(key, value string) {
 	lookupKey := s.safeKey(key)
 	s.options[key] = s.safeValue(value)
 	s.lookup[lookupKey] = key
-
-	return nil
 }
 
 // Get returns value of an option with the given key.
@@ -41,7 +39,11 @@ func (s *Section) Options() []string {
 
 // Items returns a Dict with the key-value pairs.
 func (s *Section) Items() Dict {
-	return s.options
+	result := make(Dict, len(s.options))
+	for k, v := range s.options {
+		result[k] = v
+	}
+	return result
 }
 
 func (s *Section) safeValue(in string) string {
@@ -57,15 +59,13 @@ func (s *Section) safeKey(in string) string {
 // Returns an error if the option does not exist either in the section or in
 // the defaults.
 func (s *Section) Remove(key string) error {
-	_, present := s.options[key]
+	originalKey, present := s.lookup[s.safeKey(key)]
 	if !present {
 		return getNoOptionError(s.Name, key)
 	}
 
-	// delete doesn't return anything, but this does require
-	// that the passed key to be removed matches the options key.
 	delete(s.lookup, s.safeKey(key))
-	delete(s.options, key)
+	delete(s.options, originalKey)
 
 	return nil
 }
