@@ -198,9 +198,10 @@ func (p *ConfigParser) ParseReader(in io.Reader) (err error) {
 	var (
 		reader = bufio.NewReader(in)
 
-		lineNo     int
-		key, value string
-		curSect    *Section
+		lineNo  int
+		key     string
+		value   strings.Builder
+		curSect *Section
 	)
 
 	keyValue, keyWNoValue, err := p.opt.compileRegex()
@@ -215,7 +216,7 @@ func (p *ConfigParser) ParseReader(in io.Reader) (err error) {
 			if errors.Is(err, io.EOF) {
 				if key != "" {
 					// Add never returns an error.
-					_ = curSect.Add(key, value)
+					_ = curSect.Add(key, value.String())
 				}
 
 				return nil
@@ -244,7 +245,8 @@ func (p *ConfigParser) ParseReader(in io.Reader) (err error) {
 					return fmt.Errorf("missing section header: %d %s", lineNo, line)
 				}
 
-				value += "\n" + p.opt.inlineCommentPrefixes.Split(line)
+				value.WriteByte('\n')
+				value.WriteString(p.opt.inlineCommentPrefixes.Split(line))
 				// If current line is added as a value part, may continue.
 				continue
 			} else {
@@ -253,10 +255,11 @@ func (p *ConfigParser) ParseReader(in io.Reader) (err error) {
 				// then it counts as the value parsing is finished and it can be added
 				// to the current section.
 				// Add never returns an error.
-				_ = curSect.Add(key, value)
+				_ = curSect.Add(key, value.String())
 
 				// Drop key-value pair to empty strings.
-				key, value = "", ""
+				key = ""
+				value.Reset()
 			}
 		}
 
@@ -293,7 +296,8 @@ func (p *ConfigParser) ParseReader(in io.Reader) (err error) {
 				}
 			}
 
-			value = p.opt.inlineCommentPrefixes.Split(match[3])
+			value.Reset()
+			value.WriteString(p.opt.inlineCommentPrefixes.Split(match[3]))
 		} else if p.opt.allowNoValue {
 			if match = keyWNoValue.FindStringSubmatch(line); len(match) > 0 {
 				if curSect == nil {
@@ -306,7 +310,8 @@ func (p *ConfigParser) ParseReader(in io.Reader) (err error) {
 					}
 				}
 
-				value = p.opt.inlineCommentPrefixes.Split(match[4])
+				value.Reset()
+				value.WriteString(p.opt.inlineCommentPrefixes.Split(match[4]))
 			}
 		}
 	}
