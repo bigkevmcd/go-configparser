@@ -146,7 +146,32 @@ broken_option = this value will miss
 	c.Assert(result, DeepEquals, configparser.Dict{
 		"testing":       "multiline\nvalue",
 		"myoption":      "another\nmultiline\nvalue",
-		"broken_option": "this value will miss",
+		"broken_option": "this value will miss\n\nits multiline",
+	})
+}
+
+// TestNewlineValueParsing tests parsing values that are on a new line after the key,
+// including cases with empty lines between key and value.
+func (s *ConfigParserSuite) TestNewlineValueParsing(c *C) {
+	parsed, err := configparser.ParseReader(
+		strings.NewReader(`[section]
+option1 = value1
+option2 = value2
+option3 =
+    value3
+option4 =
+
+    value4
+`),
+	)
+	c.Assert(err, IsNil)
+	result, err := parsed.Items("section")
+	c.Assert(err, IsNil)
+	c.Assert(result, DeepEquals, configparser.Dict{
+		"option1": "value1",
+		"option2": "value2",
+		"option3": "value3",      // Value on next line
+		"option4": "value4",      // Value after empty line
 	})
 }
 
